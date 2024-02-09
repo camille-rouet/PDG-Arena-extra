@@ -3,7 +3,7 @@ You will found here inventories, a launch script, original data, logs and the an
 
 ## Description of the files
 
-##### 1_inventories_files/
+#### 1_inventories_files/
 2023-12-15_GMAP_hauteurMoy_goodAlignment/
 > Contains all inventories (.inv files) used for PDG-Arena and CASTANEA simulations
 
