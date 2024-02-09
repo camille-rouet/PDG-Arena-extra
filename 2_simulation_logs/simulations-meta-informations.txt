@@ -1,0 +1,14 @@
+Capsis version	20343
+Date of simulation	2023-12-15
+
+Computation time (PDG-Light only)	14:24:37
+PDG Inventories simulated	210
+Number of year	21
+Time per simulation-year (PDG-Light)	11.76 sec
+Taille de placette	400 m2
+Largeur des cellules Samsara Light	1.5 m
+
+Computation time (CASTANEA)	00:12:58
+CASTANEA inventories simulated	72
+Number of year	21
+Time per simulation-year (PDG-Light)	0.51 sec

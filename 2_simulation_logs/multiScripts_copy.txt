@@ -1,0 +1,96 @@
+#! /bin/bash
+# cr-07.07.2023 This script executes several capsis script.
+# Each script is defined by a regex expression determining a selection of inventories to simulate and by a simulation mode
+# EXECUTION : from capsis4/ run :
+#	sh src/physiodemogenetics/myscripts/crouetScripts/scriptsArticle1/multiScripts.sh
+
+# [USER] Define output directory(-ies)
+outputDirectory=""
+
+scripts_commands_file=./src/physiodemogenetics/myscripts/crouetScripts/scriptsArticle1/scripts_commands.txt
+
+rm -f $scripts_commands_file
+touch $scripts_commands_file
+
+# [USER] Define inventory list and simulation mode of each script by editing scripts_commands, example:
+#echo "[REGEX] [MODE] ${outputDirectory}" >> $scripts_commands_file
+
+# PDG regular demography plurisp E1A
+echo "(?=.*bg_)(?=.*PDG_regdemo_plurisp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vl_)(?=.*PDG_regdemo_plurisp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vtx_)(?=.*PDG_regdemo_plurisp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+
+# PDG regular demography monosp E0
+echo "(?=.*bg_)(?=.*sapin_PDG_regdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vl_)(?=.*sapin_PDG_regdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vtx_)(?=.*sapin_PDG_regdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*bg_)(?=.*hetre_PDG_regdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vl_)(?=.*hetre_PDG_regdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vtx_)(?=.*hetre_PDG_regdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+
+# PDG irregular demography monosp E1B
+# echo "(?=.*bg_)(?=.*sapin_PDG_irregdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+# echo "(?=.*vl_)(?=.*sapin_PDG_irregdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+# echo "(?=.*vtx_)(?=.*sapin_PDG_irregdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+# echo "(?=.*bg_)(?=.*hetre_PDG_irregdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+# echo "(?=.*vl_)(?=.*hetre_PDG_irregdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+# echo "(?=.*vtx_)(?=.*hetre_PDG_irregdemo_monosp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+
+# CASTANEA
+echo "(?=.*bg_)(?=.*hetre_CASTANEA)(?=.*.inv) CAST ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vl_)(?=.*hetre_CASTANEA)(?=.*.inv) CAST ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vtx_)(?=.*hetre_CASTANEA)(?=.*.inv) CAST ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*bg_)(?=.*sapin_CASTANEA)(?=.*.inv) CAST ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vl_)(?=.*sapin_CASTANEA)(?=.*.inv) CAST ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vtx_)(?=.*sapin_CASTANEA)(?=.*.inv) CAST ${outputDirectory}" >> $scripts_commands_file
+
+# PDG irregular demography plurisp E2
+echo "(?=.*bg_)(?=.*PDG_irregdemo_plurisp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vl_)(?=.*PDG_irregdemo_plurisp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+echo "(?=.*vtx_)(?=.*PDG_irregdemo_plurisp)(?=.*.inv) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+
+
+# Regex examples :
+# (?=.*bg_bas_m_4)(?=.*CASTANEA) 	--> all inventories containing "bg_bas_m_4" AND "CASTANEA"
+# vl_inter_[A-Za-z0-9_]+5 			--> all inventories containing "vl_inter_" followed by a any set of letters, numbers and underscore and then "5"
+# echo "(?=.*bg_bas_m_4)(?=.*PDG_regdemo) PDGL2 ${outputDirectory}" >> $scripts_commands_file
+# echo "(?=.*bg_bas_m_4)(?=.*CASTANEA) CAST ${outputDirectory}" >> $scripts_commands_file
+# echo "vtx_haut_ph_1b.inv 2 ${outputDirectory}" >> $scripts_commands_file
+# echo "vtx_inter_m_3.inv 2 ${outputDirectory}" >> $scripts_commands_file
+
+# [USER] Define memory max allocation by script
+sh setmem.sh 36000
+
+echo "\nHere are the scripts commands list :"
+cat $scripts_commands_file
+echo ""
+
+
+mkdir -p $outputDirectory
+cat ./src/physiodemogenetics/myscripts/crouetScripts/scriptsArticle1/multiScripts.sh > $outputDirectory/multiScripts_copy.txt
+
+
+# Count the number of scripts
+numberOfScripts=$(eval 'cat $scripts_commands_file' | wc -l)
+
+# Execute the capsis script for all script commands listed above
+for i in $(seq 1 $numberOfScripts);
+do
+	# Define the current script index
+    echo $i > ./src/physiodemogenetics/myscripts/crouetScripts/scriptsArticle1/script_index.txt 
+    # Execute capsis script
+	sh capsis.sh -p script physiodemogenetics.myscripts.crouetScripts.scriptsArticle1.BaseScript
+	# Move simulation files of one batch to the main folder
+	rsync -a --remove-source-files --exclude 'capsis.log' --exclude 'extensionManager.log' --exclude 'areadme.txt' --exclude 'logPrefixList*.log' $outputDirectory/batch*/* $outputDirectory 
+done
+
+echo "Multiscript finished"
+
+
+# Concatenate general log files
+find $outputDirectory/batch_*/* -name 'capsis.log' -exec cat {} \; -exec echo \; > $outputDirectory/capsis.log
+find $outputDirectory/batch_*/* -name 'areadme.txt' -exec cat {} \; -exec echo \; > $outputDirectory/areadme.txt
+find $outputDirectory/batch_*/* -name 'extensionManager.log' -exec cat {} \; -exec echo \; > $outputDirectory/extensionManager.log
+
+# Clean batch folders
+rm -rf $outputDirectory/batch_*
