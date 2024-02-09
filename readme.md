@@ -1,13 +1,13 @@
 You will found here inventories, a launch script, original data, logs and the analysis script related to the simulations described in Rouet et al. (2024): PDG-Arena: An eco-physiological model for characterizing tree-tree interactions in heterogeneous stands (submitted to PCI Forest and Wood Sciences).
 
 
-# Description of the files
+## Description of the files
 
 - 1_inventories_files
 	- 2023-12-15_GMAP_hauteurMoy_goodAlignment
-	  Contains all inventories (.inv files) used for PDG-Arena and CASTANEA simulations
-	    - 0_plots_image
-	    Contains images of the simulated inventories
+	Contains all inventories (.inv files) used for PDG-Arena and CASTANEA simulations
+		- 0_plots_image
+		Contains images of the simulated inventories
 - 2_simulation_logs
 	- multiScripts_copy.txt
 	Bash script used to run PDG-Arena and CASTANEA using Capsis in script mode
