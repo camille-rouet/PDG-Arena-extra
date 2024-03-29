@@ -1,31 +1,12 @@
-You will found here inventories, a launch script, original data, logs and the analysis script related to the simulations described in Rouet et al. (2024): PDG-Arena: An eco-physiological model for characterizing tree-tree interactions in heterogeneous stands (submitted to PCI Forest and Wood Sciences).
+Scripts and data associated with the PDG-Arena forest growth model. PDG-Arena is based on ecophysiological processes and tree-tree interactions. It is part of Physio-Demo-Genetics, a model that is maintained on the [Capsis platform](https://capsis.cirad.fr/capsis/help_en/physiodemogenetics)
 
+Here, you will found :
+- scripts that serves at inventory generation and simulation analysis;
+- simulation inventories related to publications;
+- simulation results files and logs related to publications.
 
-## Description of the files
-
-#### 1_inventories_files/
-2023-12-15_GMAP_hauteurMoy_goodAlignment/
-> Contains all inventories (.inv files) used for PDG-Arena and CASTANEA simulations
-
-2023-12-15_GMAP_hauteurMoy_goodAlignment/0_plots_image/
-> Contains images of the simulated inventories
-
-#### 2_simulation_logs/
-multiScripts_copy.txt
-> Bash script used to run PDG-Arena and CASTANEA using Capsis in script mode
-
-simulations-meta-informations.txt
-> Meta-informations about the simulation (elapsed time, capsis version..)
-
-#### 3_analysis_script/
-PDG-Arena_publication_simulation_analysis.R
-> The main script of the publication
-
-CRMethodsForSimulations.R
-> A set of methods used in the main script
-
-2023-12-15_goodHeightGoodAlignment.RData
-> Contains the simulation data that are necessary to run the main script
+## Publications
+Rouet et al. (2024): PDG-Arena: An eco-physiological model for characterizing tree-tree interactions in heterogeneous stands (submitted to PCI Forest and Wood Sciences). [https://doi.org/10.1101/2024.02.09.579667](https://doi.org/10.1101/2024.02.09.579667)
 
 ## License
 This work © 2024 by Camille Rouet is licensed under [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/).
