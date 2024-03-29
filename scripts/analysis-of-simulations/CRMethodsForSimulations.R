@@ -1,3 +1,4 @@
+# This work © 2024 by Camille Rouet is licensed under [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/).
 # Author: Camille Rouet 2021-2024
 # Methods of this file are dedicated to the analysis of castaneaOnly and physiodemogenetics simulations
 # The input files of theses methods are the log of the castanea library found in var

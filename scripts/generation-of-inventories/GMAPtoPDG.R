@@ -1,3 +1,6 @@
+# This work © 2024 by Camille Rouet is licensed under [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/).
+# Genetics computation segments were written by Sylvie Oddou-Muratorio.
+
 # INIT ----
 rm(list = ls()) ; gc()
 

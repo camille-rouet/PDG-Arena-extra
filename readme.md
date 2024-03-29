@@ -7,7 +7,7 @@ Here, you will found :
 
 ## How to use 
 - Git clone this repository or download and extract the repository ZIP file
-- Open PDG-Arena-extra.Rproj using RStudio.
+- Open PDG-Arena-extra.Rproj using RStudio
 
 ## Publications
 Rouet et al. (2024): PDG-Arena: An eco-physiological model for characterizing tree-tree interactions in heterogeneous stands (submitted to PCI Forest and Wood Sciences). [https://doi.org/10.1101/2024.02.09.579667](https://doi.org/10.1101/2024.02.09.579667)

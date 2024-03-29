@@ -1,4 +1,4 @@
-# Author: Camille Rouet 2021-2024
+# This work © 2024 by Camille Rouet is licensed under [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/).
 # Script for simulation analysis of PDG-Arena and CASTANEA
 # Original paper (submitted to PCI Forest and Wood Sciences) : Rouet, Davi, Druel, Fady & Morin (2024): PDG-Arena: An eco-physiological model for characterizing tree-tree interactions in heterogeneous stands 
 
