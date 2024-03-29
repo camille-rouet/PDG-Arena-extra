@@ -8,25 +8,12 @@ library(data.table)
 # README ----
 "
 HOW TO USE
-
-Define sites
-Define initYear (year of start of simulation) 
-Define useTimeMachine (correction of age and dbh)
-Define CASTANEA options
-Define outputInventoryFolder
 Source this script
 "
 
 
-# FOLDER INIT
-# Choice of the work folders based on the computer information
-myFolder = "auto" ; if(myFolder == "auto"){ 
-  if(Sys.info()[["nodename"]] == "PAC-629-FIX86"){  myFolder = "~/THESE_CAMILLE_fixe/" ; capsisPath = "~/workspace_repository/capsis4/" ; workfilesPath = paste0(myFolder, "__WORKFILES/")}
-  else if(Sys.info()[["nodename"]] == "camille-N56VZ"){   myFolder = "~/THESE_CAMILLE_perso/" ; capsisPath = "~/workspace-eclipse/capsis4/" ; workfilesPath = paste0(myFolder, "__WORKFILES/")}
-  else if(Sys.info()[["nodename"]] == "PAC-629-PRT55"){   myFolder = "~/THESE_CAMILLE_portable/" ; capsisPath = "~/workspace_repository/capsis4/" ; workfilesPath = "/mnt/data/__WORKFILES/"}}
-varPath = paste0(capsisPath, "var/") ; 
-
-source(paste0(myFolder, "/01_docs-these/D_developpement/PDGL-developpement/inventaires/scripts/CR_methods_for_inventory_generation.R"))
+source("scripts/define_folders.R")
+source("scripts/generation-of-inventories/CR_methods_for_inventory_generation.R")
 
 
 # PARAMETERS ----
@@ -36,8 +23,7 @@ outputInConsole = FALSE # if TRUE, output is redirected in console instead of in
 # outputInConsole = TRUE # to comment
 
 # folder for writing inventories
-# outputInventoryFolder = paste0(capsisPath, "data/physiodemogenetics/crouet_inventories/GMAP_echelons_0_2/")
-outputInventoryFolder = paste0(myFolder, "01_docs-these/D_developpement/PDGL-developpement/inventaires/2024-03-29-test/")
+outputInventoryFolder = "inventories/2024-03-29-test/"
 
 # standard = trees are located and defined based on the GMAP inventory, output is one (eventually mixed) plot
 # regdemo_monosp = trees are all of the same (mean) age and (quadratic mean) dbh and they are located on a regular basis, two monospecific plot are made
@@ -137,7 +123,15 @@ CASTANEASpeciesTable = CASTANEASpeciesFile$speciesTable
 # *****************************************
 
 # # Inventory option file
-pdgInventoryOptions = readInventoryOptionFile(filePath = paste0(myFolder, "01_docs-these/D_developpement/PDGL-developpement/inventaires/scripts/PDG_inventory_options.txt"))
+pdgInventoryOptions = readInventoryOptionFile("scripts/generation-of-inventories/PDG_inventory_options.txt")
+
+pdgOptionFileFolder = paste0(myFolder, "01_docs-these/O_Sites_GMAP/GMAP_donnees/")
+pdgOptionFileName = "PDG_inventory_options_GMAP_simulations.txt"
+pdgInventoryOptions = readInventoryOptionFile(filePath = paste0(pdgOptionFileFolder, pdgOptionFileName))
+
+# Can use this :
+# pdgInventoryOptions = readInventoryOptionFile("scripts/generation-of-inventories/PDG_inventory_options.txt")
+
 
 
 # MODIFY options

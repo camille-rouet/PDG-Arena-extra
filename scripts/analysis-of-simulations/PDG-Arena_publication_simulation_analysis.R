@@ -3,9 +3,8 @@
 # Original paper (submitted to PCI Forest and Wood Sciences) : Rouet, Davi, Druel, Fady & Morin (2024): PDG-Arena: An eco-physiological model for characterizing tree-tree interactions in heterogeneous stands 
 
 # Recommandation for external user :
-# - import the .RData file
-# - source "CRMethodsForSimulations.R" 
-# - skip the IMPORT section
+#   1. Go to QUICK CONFIGURATION: load the .RData file & source "CRMethodsForSimulations.R" 
+#   2. Go directly to the graph sections (skip CONFIGURATION, IMPORT and CONVERSION sections)
 
 # Vocabulary :
 # PDG-Light : the previous name of PDG-Arena
@@ -14,8 +13,23 @@
 # E1B = IrregdemoMonosp = irregular and monospecific inventories (not used in the publication)
 # E2 = IrregdemoPlurisp = O inventories
 
+
+# QUICK CONFIGURATION   --------------------------------------------------------
+load("simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment.RData")
+source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
+
+
+# CONFIGURATION  ---------------------------------------------------------------
 rm(list = ls()) ; gc() # clear
-source("CRMethodsForSimulations.R")
+
+capsisPath = ""
+varPath = paste0(capsisPath, "var/") 
+workfilesPath = ""
+PROGRAM_ON_SERVER = FALSE
+
+source("scripts/define_folders.R")
+
+source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
 
 

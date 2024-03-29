@@ -5,22 +5,16 @@ library(tidyverse)
 library(openxlsx)
 library(data.table)
 
-# Choice of the work folders based on the computer information
-myFolder = "auto" ; if(myFolder == "auto"){ 
-  if(Sys.info()[["nodename"]] == "PAC-629-FIX86"){  myFolder = "~/THESE_CAMILLE_fixe/" ; capsisPath = "~/workspace_repository/capsis4/" ; workfilesPath = paste0(myFolder, "__WORKFILES/")}
-  else if(Sys.info()[["nodename"]] == "camille-N56VZ"){   myFolder = "~/THESE_CAMILLE_perso/" ; capsisPath = "~/workspace-eclipse/capsis4/" ; workfilesPath = paste0(myFolder, "__WORKFILES/")}
-  else if(Sys.info()[["nodename"]] == "PAC-629-PRT55"){   myFolder = "~/THESE_CAMILLE_portable/" ; capsisPath = "~/workspace_repository/capsis4/" ; workfilesPath = "/mnt/data/__WORKFILES/"}}
-varPath = paste0(capsisPath, "var/") ; 
-
-source(paste0(myFolder, "/01_docs-these/D_developpement/PDGL-developpement/inventaires/scripts/CR_methods_for_inventory_generation.R"))
 
 
+source("scripts/define_folders.R")
+source("scripts/generation-of-inventories/CR_methods_for_inventory_generation.R")
 
 
 
 # PARAMETERS ----
 
-outputInventoryFolder = paste0(myFolder, "01_docs-these/D_developpement/PDGL-developpement/inventaires/2024-03-20_ONF/")
+outputInventoryFolder = "inventories/2024-03-29_ONF-test/"
 
 outputInConsole = FALSE
 # outputInConsole = TRUE # to comment

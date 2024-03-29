@@ -2,7 +2,9 @@
 # Methods of this file are dedicated to the analysis of castaneaOnly and physiodemogenetics simulations
 # The input files of theses methods are the log of the castanea library found in var
 
-PROGRAM_ON_SERVER = FALSE
+if(! "PROGRAM_ON_SERVER" %in% ls()){
+  PROGRAM_ON_SERVER = FALSE
+}
 
 # library(tidyverse) # Group of packages that contains ggplot2, readr...
 library(readr)
@@ -28,10 +30,6 @@ if(!PROGRAM_ON_SERVER){
 if(system.file(package='rmote') != ""){ library(rmote) }
 
 
-# Choice of the work folders
-capsisPath = ""
-workfilesPath = ""
-varPath = paste0(capsisPath, "var/") ; 
 
 # unités
 WtoPhoton = 4.54 # 1 W = 4.54 micromol of photo per sec
