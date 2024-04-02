@@ -1,3 +1,5 @@
 define_folders.R
 inventories/
 .Rproj.user
+local_plots/
+local_Rdata/
