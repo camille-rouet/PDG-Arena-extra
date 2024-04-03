@@ -19,7 +19,7 @@ fmOutput = 1 # similar to fmSettings.output
 logList = logListList[[fmOutput]]
 keepFilter = ""
 
-currentSimulation = "2024-03-29_ONF/"
+currentSimulation = "2024-04-03_ONF/"
 simulationFolderGlobal = paste0("2024_simu_article/", currentSimulation)
 folderPlot = paste0("local_plots/", currentSimulation, "bazardeplot/")
 

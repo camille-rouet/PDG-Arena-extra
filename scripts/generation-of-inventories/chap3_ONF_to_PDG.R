@@ -16,7 +16,7 @@ source("scripts/generation-of-inventories/CR_methods_for_inventory_generation.R"
 
 # PARAMETERS ----
 
-outputInventoryFolder = "inventories/2024-03-29_ONF-test/"
+outputInventoryFolder = "inventories/2024-03-20_ONF/"
 
 outputInConsole = FALSE
 # outputInConsole = TRUE # to comment

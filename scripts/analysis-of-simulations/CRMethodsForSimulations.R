@@ -823,7 +823,7 @@ combineStandScaleSimulations = function(data1, data2, proportionBA1 = NULL, prop
       # dependant du nombre d'arbre de l'espèce
       BA_relative_columns= c("GPP", "altitude", "species", "Xposition", "Yposition", "LAImaxNextYear", "LAImaxBeforeFrost", "LAImaxThisYear", "LAIloss",
                              "NEE", "NPP", "Reco", "GPP", "RN", "ETR", "ETRveg", "ETRsol", "TR", "ETP", "CWD", "DBBV", "DBF", "DBRF", "Rauto", "Rmaintenance", "Rgrowth",
-                             "Rwood", "RfineRoots", "Rcanopy", "Rhetero", "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "biomassOfReservesBeforeRefill", "Ctop", "Csol", "ratioReserves",
+                             "Rwood", "RfineRoots", "Rcanopy", "Rhetero", "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "BiomassOfReservesBeforeRefill", "Ctop", "Csol", "ratioReserves",
                              "BiomassOfFineRoot", "BiomassOfTrunk", " BiomassOfCoarseRoot", "BiomassOfBranch", "AliveWoodBiomass", "BiomassNitrogen", "DBSS", "fineRootsMortality",
                              "drainage", "Psoilmin", "RDI", "Nha", "Gha", "Vha", "VhaInit", "reservetoBud", "numberOfSeeds", "numberOfFruits", "mortality", "thinnedVha", "NSC",
                              "PLCsoil", "rateOfMortality", "yearlyLeafGrowth", "yearlyLeafRespiration", "yearlyInputNitrogen", 
@@ -875,7 +875,7 @@ combineStandScaleSimulations = function(data1, data2, proportionBA1 = NULL, prop
       
       # dependant du nombre d'arbre de l'espèce
       BA_relative_columns= c("species", "GPP", "TR", "CanopyConductance", "ETRcan", "ETP", "LAIday", "dailyInputNitrogen", "DBBV", "DBRF", "BSS", "BF", "dailyRemainingCarbone", "MBF", "LAImax", "RVM", "RVC",
-                             "maxHourlyTranspiration", "Rheterotrophic", "Ctop", "Csol", "LAIloss", "NEE", "Reco", "biomassOfFineRoot", "biomassOfReserves", "biomassOfReservesBeforeRefill", "biomassOfTrunk", "biomassOfBranch",
+                             "maxHourlyTranspiration", "Rheterotrophic", "Ctop", "Csol", "LAIloss", "NEE", "Reco", "biomassOfFineRoot", "biomassOfReserves", "BiomassOfReservesBeforeRefill", "biomassOfTrunk", "biomassOfBranch",
                              "biomassOfCoarseRoot", "woodGrowth", "reservesGrowth", "fineRootsGrowth", "reservesMortality", "leafGrowth", "RCF", "woodMortality", "fineRootsMortality",
                              "coarseRootsMortality", "biomassOfNitrogen", "vegTot", "vegPAR", "vegPIR", "vegDir", "vegDif", "vegPARdir", "vegPARdif", "vegPIRdir", "vegPIRdif", "dailyPotentialPARdir",
                              "dailyAbsorbedPARdir", "lightCompetitionIndex", "inciTot", "inciPAR", "inciPIR", "inciDir", "inciDif", "inciPARdir", "inciPARdif", "inciPIRdir", "inciPIRdif", "soilTot",
@@ -1362,7 +1362,7 @@ getStandScaleSimu = function(indivScaleSimu, output = 4, fmSpeciesIDs = NULL){
     crownProjectionRatioVar = c("GPP", "NPP", "Reco", "LAImaxThisYear", "LAImaxNextYear", "LAImaxBeforeFrost", "LAIloss", "NEE", "ETRveg", 
                                 "TR", "ETP", "DBSS",
                                 "DBBV", "DBF", "DBRF", "Rauto", "Rmaintenance", "Rgrowth", "Rwood", "RfineRoots", "Rcanopy", "Rhetero",
-                                "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "biomassOfReservesBeforeRefill", "BiomassOfFineRoot", "BiomassOfTrunk",
+                                "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "BiomassOfReservesBeforeRefill", "BiomassOfFineRoot", "BiomassOfTrunk",
                                 "BiomassOfCoarseRoot", "BiomassOfBranch", "fineRootsMortality", "AliveWoodBiomass", "BiomassNitrogen", "yearlyLeafGrowth", "yearlyLeafRespiration",
                                 "veg_yearlyMJm2", "vegPAR_yearlyMJm2", "vegPIR_yearlyMJm2", "vegDir_yearlyMJm2", "vegDiff_yearlyMJm2", 
                                 "vegPARdir_yearlyMJm2", "vegPIRdir_yearlyMJm2", "vegPARdiff_yearlyMJm2", "vegPIRdiff_yearlyMJm2")
@@ -1445,7 +1445,7 @@ getStandScaleSimu = function(indivScaleSimu, output = 4, fmSpeciesIDs = NULL){
                                  "RVM", "RVC", "maxHourlyTranspiration", "LAIloss", "NEE", "Rheterotrophic",
                                  
                                  # woodGrowth variables
-                                 "BF", "biomassOfFineRoot", "biomassOfReserves", "biomassOfReservesBeforeRefill", "biomassOfTrunk",
+                                 "BF", "biomassOfFineRoot", "biomassOfReserves", "BiomassOfReservesBeforeRefill", "biomassOfTrunk",
                                  "biomassOfBranch", "biomassOfCoarseRoot", "woodGrowth",
                                  "reservesGrowth", "fineRootsGrowth", "reservesMortality",
                                  "leafGrowth", "RCF", "woodMortality",
