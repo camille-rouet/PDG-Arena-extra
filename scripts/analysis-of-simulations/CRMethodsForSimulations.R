@@ -256,13 +256,21 @@ importSimu = function(folderPath, logList = NULL, prefix = "", fileExtention = "
   }
   
   if(printMessage){
-    PDGLightMessage = ""
+    message = ""
     if("PDGInitialParameters" %in% names(tmp)){
-      PDGLightMessage1 = ifelse(tmp$PDGInitialParameters$pdgLightTagMode, "SL tag mode", "SL simple mode")
-      PDGLightMessage2 = ifelse(tmp$PDGInitialParameters$pdgLightDisableWaterInteraction, "without water interactions", "with water interactions")
-      PDGLightMessage = paste0("\t\tOptions: ", PDGLightMessage1, ", ", PDGLightMessage2)
+      option_1 = "pdgArenaTagMode"
+      option_2 = "pdgArenaDisableWaterInteraction"
+      if("pdgLightTagMode" %in% names(tmp$PDGInitialParameters)){
+        # old denomination
+        option_1 = "pdgLightTagMode"
+        option_2 = "pdgLightDisableWaterInteraction"
+      }
+      
+      message1 = ifelse(tmp$PDGInitialParameters[[option_1]], "SL tag mode", "SL simple mode")
+      message2 = ifelse(tmp$PDGInitialParameters[[option_2]], "without water interactions", "with water interactions")
+      message = paste0("\t\tOptions: ", message1, ", ", message2)
     }
-    cat("Simu date :\t", tmp$inventory$dateTime, PDGLightMessage,  "\n")
+    cat("Simu date :\t", tmp$inventory$dateTime, message,  "\n")
     cat("Inventory :\t", tmp$inventory$originalinventory, "\n")
   }
   
@@ -302,7 +310,7 @@ importInventory = function(folderPath, suffix, prefix = "", fileExtention = ".lo
     }
   }
   
-  # standArea for PDG light
+  # standArea for PDG Arena
   if("ncol" %in% colnames(inventory) & "nlin" %in% colnames(inventory) & "cellwidth" %in% colnames(inventory)){
     inventory$standArea_m2 = inventory$ncol * inventory$nlin * inventory$cellwidth**2 
   }
@@ -815,7 +823,7 @@ combineStandScaleSimulations = function(data1, data2, proportionBA1 = NULL, prop
       # dependant du nombre d'arbre de l'espèce
       BA_relative_columns= c("GPP", "altitude", "species", "Xposition", "Yposition", "LAImaxNextYear", "LAImaxBeforeFrost", "LAImaxThisYear", "LAIloss",
                              "NEE", "NPP", "Reco", "GPP", "RN", "ETR", "ETRveg", "ETRsol", "TR", "ETP", "CWD", "DBBV", "DBF", "DBRF", "Rauto", "Rmaintenance", "Rgrowth",
-                             "Rwood", "RfineRoots", "Rcanopy", "Rhetero", "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "Ctop", "Csol", "ratioReserves",
+                             "Rwood", "RfineRoots", "Rcanopy", "Rhetero", "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "biomassOfReservesBeforeRefill", "Ctop", "Csol", "ratioReserves",
                              "BiomassOfFineRoot", "BiomassOfTrunk", " BiomassOfCoarseRoot", "BiomassOfBranch", "AliveWoodBiomass", "BiomassNitrogen", "DBSS", "fineRootsMortality",
                              "drainage", "Psoilmin", "RDI", "Nha", "Gha", "Vha", "VhaInit", "reservetoBud", "numberOfSeeds", "numberOfFruits", "mortality", "thinnedVha", "NSC",
                              "PLCsoil", "rateOfMortality", "yearlyLeafGrowth", "yearlyLeafRespiration", "yearlyInputNitrogen", 
@@ -867,7 +875,7 @@ combineStandScaleSimulations = function(data1, data2, proportionBA1 = NULL, prop
       
       # dependant du nombre d'arbre de l'espèce
       BA_relative_columns= c("species", "GPP", "TR", "CanopyConductance", "ETRcan", "ETP", "LAIday", "dailyInputNitrogen", "DBBV", "DBRF", "BSS", "BF", "dailyRemainingCarbone", "MBF", "LAImax", "RVM", "RVC",
-                             "maxHourlyTranspiration", "Rheterotrophic", "Ctop", "Csol", "LAIloss", "NEE", "Reco", "biomassOfFineRoot", "biomassOfReserves", "biomassOfTrunk", "biomassOfBranch",
+                             "maxHourlyTranspiration", "Rheterotrophic", "Ctop", "Csol", "LAIloss", "NEE", "Reco", "biomassOfFineRoot", "biomassOfReserves", "biomassOfReservesBeforeRefill", "biomassOfTrunk", "biomassOfBranch",
                              "biomassOfCoarseRoot", "woodGrowth", "reservesGrowth", "fineRootsGrowth", "reservesMortality", "leafGrowth", "RCF", "woodMortality", "fineRootsMortality",
                              "coarseRootsMortality", "biomassOfNitrogen", "vegTot", "vegPAR", "vegPIR", "vegDir", "vegDif", "vegPARdir", "vegPARdif", "vegPIRdir", "vegPIRdif", "dailyPotentialPARdir",
                              "dailyAbsorbedPARdir", "lightCompetitionIndex", "inciTot", "inciPAR", "inciPIR", "inciDir", "inciDif", "inciPARdir", "inciPARdif", "inciPIRdir", "inciPIRdif", "soilTot",
@@ -1249,7 +1257,7 @@ computeStandQuadraticMeanVariables = function(tableToFill, indivScaleTable,  var
 
 
 
-# Create a stand scale simulation object base on a PDG light simulation
+# Create a stand scale simulation object base on a PDG Arena simulation
 # indivScaleSimu is the output of importSimu (list of tables). It can also be a list of simulation
 # Simulation can be of one year or several year
 # output can be reduced to make computation up to yearly (1), daily (2), hourly (3) or hourly x layer (4) level
@@ -1282,7 +1290,13 @@ getStandScaleSimu = function(indivScaleSimu, output = 4, fmSpeciesIDs = NULL){
   years = unique(indivScaleSimu$yearlyResults$year)
   oneTreeSimu = sfiltering(indivScaleSimu, fmCellIDs = c(oneFmCellId))
   
-  isWaterInteractionsDisabled = indivScaleSimu$PDGInitialParameters$pdgLightDisableWaterInteraction
+  option = "pdgArenaDisableWaterInteraction"
+  if("pdgLightTagMode" %in% names(indivScaleSimu$PDGInitialParameters)){
+    # old denomination
+    option = "pdgLightDisableWaterInteraction"
+  }
+  
+  isWaterInteractionsDisabled = indivScaleSimu$PDGInitialParameters[[option]]
   
   
   # Create new hollow tabs for tree-level tabs 
@@ -1348,7 +1362,7 @@ getStandScaleSimu = function(indivScaleSimu, output = 4, fmSpeciesIDs = NULL){
     crownProjectionRatioVar = c("GPP", "NPP", "Reco", "LAImaxThisYear", "LAImaxNextYear", "LAImaxBeforeFrost", "LAIloss", "NEE", "ETRveg", 
                                 "TR", "ETP", "DBSS",
                                 "DBBV", "DBF", "DBRF", "Rauto", "Rmaintenance", "Rgrowth", "Rwood", "RfineRoots", "Rcanopy", "Rhetero",
-                                "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "BiomassOfFineRoot", "BiomassOfTrunk",
+                                "BSSmin", "BiomassOfLeaves", "BiomassOfReserves", "biomassOfReservesBeforeRefill", "BiomassOfFineRoot", "BiomassOfTrunk",
                                 "BiomassOfCoarseRoot", "BiomassOfBranch", "fineRootsMortality", "AliveWoodBiomass", "BiomassNitrogen", "yearlyLeafGrowth", "yearlyLeafRespiration",
                                 "veg_yearlyMJm2", "vegPAR_yearlyMJm2", "vegPIR_yearlyMJm2", "vegDir_yearlyMJm2", "vegDiff_yearlyMJm2", 
                                 "vegPARdir_yearlyMJm2", "vegPIRdir_yearlyMJm2", "vegPARdiff_yearlyMJm2", "vegPIRdiff_yearlyMJm2")
@@ -1431,7 +1445,7 @@ getStandScaleSimu = function(indivScaleSimu, output = 4, fmSpeciesIDs = NULL){
                                  "RVM", "RVC", "maxHourlyTranspiration", "LAIloss", "NEE", "Rheterotrophic",
                                  
                                  # woodGrowth variables
-                                 "BF", "biomassOfFineRoot", "biomassOfReserves", "biomassOfTrunk",
+                                 "BF", "biomassOfFineRoot", "biomassOfReserves", "biomassOfReservesBeforeRefill", "biomassOfTrunk",
                                  "biomassOfBranch", "biomassOfCoarseRoot", "woodGrowth",
                                  "reservesGrowth", "fineRootsGrowth", "reservesMortality",
                                  "leafGrowth", "RCF", "woodMortality",
@@ -1874,10 +1888,10 @@ importSimuList = function(folderPath, years = NULL, simuSetPrefix = "", skipFilt
   cat(paste(logPrefixList, sep = "    "))
   cat("\n")
   
-  cat("\nDone")
+  cat("\nDone\n")
   
   if(length(simuList) == 1){
-    cat("\nOnly one simulation has been found. The simulation is return directly (not inside a list).")
+    cat("\nOnly one simulation has been found. The simulation is return directly (not inside a list).\n")
     simuList = simuList[[1]]
   }
   
@@ -2101,6 +2115,15 @@ getInitialSpeciesTreeProportionInSimulationList = function(simuList, targetSp){
 }
 
 
+cleanSimuListNames = function(simuList){
+  
+  for(i in 1:length(names(simuList))){
+    # replace all brackets and dash by nothing
+    names(simuList)[i] = gsub(x = names(simuList)[i], pattern = "(\\[|\\]|\\)|\\(|-)", replacement = "")
+  }
+  
+  return(simuList)
+}
 
 
 # AREAS COMPARISON -------------------------------------------------------------
@@ -3273,8 +3296,7 @@ gg_color_hue <- function(n) {
 
 
 
-# check the last plot index and write a new plot with an incremented index
-saveLastGgPlot = function(folderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".png"){
+saveGgPlot = function(plot = NULL, plotfolderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".pdf"){
   
   
   if(is.null(fileName)){
@@ -3284,17 +3306,17 @@ saveLastGgPlot = function(folderPlot, plot_height = 960, plot_width = NULL, rati
     }else{
       increment_plot = 1
     }
-    fileName = paste0("plot_", increment_plot, fileSuffix)
+    fileName = paste0("plot_", increment_plot)
     increment_plot = increment_plot + 1
     
     if(!dir.exists(folderPlot)){
-      dir.create(folderPlot)
+      dir.create(folderPlot, recursive = T)
     }
     
     write_file(x = paste0(increment_plot), file = index_filePath, append = F)
   }
   
-  imagePath = paste0(folderPlot, fileName)
+  imagePath = paste0(folderPlot, fileName, fileSuffix)
   
   if(is.null(plot_width)){
     plot_width = plot_height * ratio
@@ -3306,6 +3328,10 @@ saveLastGgPlot = function(folderPlot, plot_height = 960, plot_width = NULL, rati
          dpi = 100, units = "px", scale = scale)
 }
 
+# plot the last ggplot, see saveGgPlot
+saveLastGgPlot = function(plotfolderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".pdf"){
+  saveGgPlot(plotfolderPlot = plotfolderPlot, plot_height = plot_height, plot_width = plot_width, ratio = ratio, scale = scale, fileName = fileName, fileSuffix = fileSuffix)
+}
 
 
 
