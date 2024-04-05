@@ -3299,19 +3299,22 @@ gg_color_hue <- function(n) {
 saveGgPlot = function(plot = NULL, plotfolderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".pdf"){
   
   
+  if(!dir.exists(folderPlot)){
+    dir.create(folderPlot, recursive = T)
+  }
+  
   if(is.null(fileName)){
     index_filePath = paste0(folderPlot,"plot_index.txt")
+    
+    # read index file or set to 1
     if(file.exists(index_filePath)){
       increment_plot = as.integer(read_file(index_filePath))
     }else{
       increment_plot = 1
     }
+    
     fileName = paste0("plot_", increment_plot)
     increment_plot = increment_plot + 1
-    
-    if(!dir.exists(folderPlot)){
-      dir.create(folderPlot, recursive = T)
-    }
     
     write_file(x = paste0(increment_plot), file = index_filePath, append = F)
   }
@@ -3771,6 +3774,56 @@ makeStandYearTableFromStandScale = function(standSimulist, standYearTable_GMAP){
   return(standYearTable)
 }
 
+
+
+
+
+
+# Based on a stand scale simulation list, makes a table with one line per stand-year
+# yvarList is the list of yearlyResults variabels to store
+# This method is not dependent on a GMAP context
+makeStandYearTableFromStandScale_universal = function(standSimulist, yvarList){
+  code_site_list = names(standSimulist)
+  
+  nYears = length(unique(standSimulist[[1]]$yearlyResults$year))
+  nStandYearTot = length(code_site_list) * nYears
+  
+  # create base result table
+  standYearTable = tibble(code_site = "", year = 0, standSimulist[[1]]$yearlyResults[1, yvarList], .rows = nStandYearTot)
+  
+  # set all numerics to 0, "" or FALSE
+  standYearTable[sapply(standYearTable[1, ], is.numeric)] = 0
+  standYearTable[sapply(standYearTable[1, ], is.character)] = ""
+  standYearTable[sapply(standYearTable[1, ], is.logical)] = FALSE
+  
+  
+  index_line = 1
+  
+  nIter = nStandYearTot
+  pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=") 
+  
+  for(i in 1:length(code_site_list)){ # i = 1
+    a_code_site = code_site_list[i]
+    
+    codesiteYearlyResults = standSimulist[[a_code_site]]$yearlyResults
+    codesiteYearlyResults$year = round(codesiteYearlyResults$year)
+    
+    years = unique(codesiteYearlyResults$year)
+    
+    for(ayear in years){
+      standYearTable[index_line, ]$code_site = a_code_site
+      standYearTable[index_line, ]$year = ayear
+      codesiteOneYearResults = subset(codesiteYearlyResults, year == ayear)
+      standYearTable[index_line, yvarList] = codesiteOneYearResults[yvarList]
+      
+      index_line = index_line + 1
+      setTxtProgressBar(pb, index_line) # change progress bar
+    } # /end loop years
+  }# /end loop sites
+  close(pb)
+  
+  return(standYearTable)
+}
 
 
 
@@ -4319,3 +4372,100 @@ getTripletFromCodeSite = function(code_site){
   return(paste(site, subsite, number, sep = "_"))
 }
 
+
+
+
+# ONF inventories meta-info ----
+
+# get RU in integer based on codesite
+getRUfromCode_site = function(a_code_site){
+  
+  if(length(a_code_site) > 1){
+    return( vapply(a_code_site, FUN = getRUfromCode_site, FUN.VALUE = 0, USE.NAMES = F) )
+  }
+  
+  splitlist = strsplit(a_code_site, split = "_")[[1]]
+  RUstr = splitlist[grepl(splitlist, pattern = "RU")]
+  
+  # only the number
+  RUstr = as.integer(substr(RUstr, 3 , nchar(RUstr)))
+  
+  return(RUstr)
+}
+
+
+
+# get tree class size in string based on codesite
+getClassSizefromCode_site = function(a_code_site){
+  
+  if(length(a_code_site) > 1){
+    return( vapply(a_code_site, FUN = getClassSizefromCode_site, FUN.VALUE = "", USE.NAMES = F) )
+  }
+  
+  splitlist = strsplit(a_code_site, split = "_")[[1]]
+  treeSizeStr = splitlist[grepl(splitlist, pattern = "PB|BM|GB")]
+  # treeSizeStr = substr(treeSizeStr, 2, nchar(treeSizeStr))
+  
+  
+  return(treeSizeStr)
+}
+
+# get composition in string based on codesite
+getCompositionfromCode_site = function(a_code_site){
+  
+  if(length(a_code_site) > 1){
+    return( vapply(a_code_site, FUN = getCompositionfromCode_site, FUN.VALUE = "", USE.NAMES = F) )
+  }
+  
+  splitlist = strsplit(a_code_site, split = "_")[[1]]
+  compositionStr = splitlist[grepl(splitlist, pattern = "het|sap|HET|SAP")]
+  # compositionStr = substr(compositionStr, 2, nchar(compositionStr))
+  
+  
+  return(compositionStr)
+}
+
+# get composition index based on codesite
+getCompositionIndexfromCode_site = function(a_code_site){
+  
+  if(length(a_code_site) > 1){
+    return( vapply(a_code_site, FUN = getCompositionIndexfromCode_site, FUN.VALUE = 0, USE.NAMES = F) )
+  }
+  
+  splitlist = strsplit(a_code_site, split = "_")[[1]]
+  compositionIndexStr = splitlist[grepl(splitlist, pattern = "het|sap|HET|SAP")]
+  compositionIndexStr = substr(compositionIndexStr, 1, 1)
+  compositionIndexStr = as.integer(compositionIndexStr)
+  
+  return(compositionIndexStr)
+}
+
+
+
+# get ntree in integer based on codesite
+getNTreefromCode_site = function(a_code_site){
+  
+  if(length(a_code_site) > 1){
+    return( vapply(a_code_site, FUN = getNTreefromCode_site, FUN.VALUE = 0, USE.NAMES = F) )
+  }
+  
+  splitlist = strsplit(a_code_site, split = "__")[[1]]
+  nTreeStr = splitlist[grepl(splitlist, pattern = "Narbres")]
+  nTreeStr = substr(nTreeStr, 9, nchar(nTreeStr))
+  nTreeStr = as.integer(nTreeStr)
+  return(nTreeStr)
+}
+
+# get nha in integer based on codesite
+getNhafromCode_site = function(a_code_site){
+  
+  if(length(a_code_site) > 1){
+    return( vapply(a_code_site, FUN = getNhafromCode_site, FUN.VALUE = 0, USE.NAMES = F) )
+  }
+  
+  splitlist = strsplit(a_code_site, split = "__")[[1]]
+  nhaStr = splitlist[grepl(splitlist, pattern = "Nha")]
+  nhaStr = substr(nhaStr, 5, nchar(nhaStr))
+  nhaStr = as.integer(nhaStr)
+  return(nhaStr)
+}
