@@ -4419,7 +4419,7 @@ getCompositionfromCode_site = function(a_code_site){
   
   splitlist = strsplit(a_code_site, split = "_")[[1]]
   compositionStr = splitlist[grepl(splitlist, pattern = "het|sap|HET|SAP")]
-  # compositionStr = substr(compositionStr, 2, nchar(compositionStr))
+  compositionStr = substr(compositionStr, 2, nchar(compositionStr))
   
   
   return(compositionStr)
