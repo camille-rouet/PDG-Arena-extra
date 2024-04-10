@@ -1804,7 +1804,7 @@ importSimuList = function(folderPath, years = NULL, simuSetPrefix = "", skipFilt
     stop(paste0("No simulation has been found at ", folderPath))
   }
   
-  cat("Importing simulations...\n")
+  cat(paste0("Importing ", length(logPrefixList), " simulations...\n"))
   cat("list : \t", logPrefixList)
   cat("\n")
   
@@ -2209,7 +2209,7 @@ simuPlots = function(data1_, data2_ = NULL, tableName = NULL, dataNames = NULL, 
   # if this is a daily simulation but no year was provided
   if("year" %in% names(data1) & "day" %in% names(data1) & is.null(years)){
     if(length(unique(data1$year)) > 1){
-      years = years[1]
+      years = unique(data1$year)[1]
       cat(paste0("\nWarning: several years were provided in the table. Year ", years, " was chosen."))
     }
   }

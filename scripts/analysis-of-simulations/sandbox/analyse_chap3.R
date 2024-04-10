@@ -14,7 +14,7 @@ source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
 
 # IMPORT ----
-# IMPORT SIMULATIONS
+# IMPORT SIMULATIONS YEARLY
 fmOutput = 1 # similar to fmSettings.output
 logList = logListList[[fmOutput]]
 keepFilter = ""
@@ -32,43 +32,36 @@ simuListRU100 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simu
                               logList = logList, keepFilter = keepFilter)
 simuListRU100 = cleanSimuListNames(simuListRU100)
 
-# simuPlots(simuListRU50$RU50_01_2PB__1HETpur__Narbres_75__Nha_833, tableName = "y", xvar = "y", yvar = yearlyVariables)
+
+
+# IMPORT SIMULATION DAILY
+fmOutput = 2 # similar to fmSettings.output
+logList = logListList[[fmOutput]]
+keepFilter = "2-PB__1-HETpur"
+
+currentSimulation = "2024-04-03_ONF/"
+simulationFolderGlobal = paste0("2024_simu_article/", currentSimulation)
+folderPlot = paste0("local_plots/", currentSimulation, "bazardeplot/")
+
+dsimuListRU50 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simulationFolderGlobal, "RU50/"),
+                              logList = logList, keepFilter = keepFilter)
+dsimuListRU50 = cleanSimuListNames(dsimuListRU50)
+
+
+dsimuListRU100 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simulationFolderGlobal, "RU100/"),
+                               logList = logList, keepFilter = keepFilter)
+dsimuListRU100 = cleanSimuListNames(dsimuListRU100)
 
 
 # CONVERT ----
 
-simuListRU50_st = getStandScaleSimuList(simuListRU50)
-simuListRU100_st = getStandScaleSimuList(simuListRU100)
+dsimuListRU50_st = getStandScaleSimuList(dsimuListRU50)
+dsimuListRU100_st = getStandScaleSimuList(dsimuListRU100)
 
 
-folderPlot = paste0("local_plots/", currentSimulation, "allSimuCheck_yearly/")
 
-yvars = c("Gha", "GPP", "NPP", "LAImaxThisYear", "BiomassOfReserves", "BiomassOfReservesBeforeRefill")
 
-for(i in 1:length(simuListRU50_st)){
-  name_simu = names(simuListRU50_st)[i]
-  aplot = simuPlots(simuListRU50_st[[i]], tableName = "y", xvar = "y", yvar = yvars)
-
-  saveGgPlot(aplot, saveGgPlot,
-             plot_height = 960, plot_width = NULL,
-             ratio = 4/3,
-             scale = 1, fileName = name_simu, fileSuffix = ".pdf")
-  rm(aplot)
-  rm(name_simu)
-}
-
-for(i in 1:length(simuListRU100_st)){
-  name_simu = names(simuListRU100_st)[i]
-  aplot = simuPlots(simuListRU100_st[[i]], tableName = "y", xvar = "y", yvar = yvars)
-
-  saveGgPlot(aplot, saveGgPlot,
-             plot_height = 960, plot_width = NULL,
-             ratio = 4/3,
-             scale = 1, fileName = name_simu, fileSuffix = ".pdf")
-  rm(aplot)
-  rm(name_simu)
-}
-
+# stand year table
 
 yvarList = c("GPP", "TR", "REWmin", "LAImaxThisYear", "dbh", "RU_shortage_max")
 standYearTable_RU50 = makeStandYearTableFromStandScale_universal(simuListRU50_st, yvarList)
@@ -99,7 +92,7 @@ standYearTable$GPPperLAI = standYearTable$GPP / standYearTable$LAI
 
 
 
-# One table for all years
+# stand year table, average for all years
 standYearTable_meanYear = aggregate(standYearTable, FUN = mean, by = list(code_site_bis = standYearTable$code_site))
 standYearTable_meanYear$code_site = standYearTable_meanYear$code_site_bis
 standYearTable_meanYear$code_site_bis = NULL
@@ -114,7 +107,74 @@ standYearTable_meanYear$nha = getNhafromCode_site(standYearTable_meanYear$code_s
 standYearTable_meanYear$GPPperLAI = standYearTable_meanYear$GPP / standYearTable_meanYear$LAI
 
 
-# Plot organization of data
+
+
+# Compute Net Biodiversity Effects (NBE)
+standYearTable_meanYear$NBE_gpp = 0
+standYearTable_meanYear$NBE_tr = 0
+standYearTable_meanYear$NBE_ru_shortage_max = 0
+standYearTable_meanYear$NBE_ru_shortage_max_relative = 0
+standYearTable_meanYear$NBE_rewMin = 0
+for(i in 1:dim(standYearTable_meanYear)[1]){
+  aSimu = standYearTable_meanYear[i, ]
+  if(!grepl(aSimu$composition, pattern = "pur")){
+    nTreeSimu = aSimu$nTree
+    classSizeSimu = aSimu$classSize
+    RUSimu = aSimu$RU
+    
+    beechMono = subset(standYearTable_meanYear, nTree == nTreeSimu & classSize == classSizeSimu & RU == RUSimu & composition == "HETpur")
+    firMono = subset(standYearTable_meanYear, nTree == nTreeSimu & classSize == classSizeSimu & RU == RUSimu & composition == "SAPpur")
+    
+    proportion = aSimu$beechCompositionRate
+    
+    numericalColumns = colnames(aSimu)[vapply(aSimu[1,], FUN = is.numeric, FUN.VALUE = FALSE, USE.NAMES = F)]
+    mixedAdditiveASimu = beechMono[, numericalColumns] * proportion + firMono[, numericalColumns] * (1-proportion) 
+    
+    standYearTable_meanYear[i, ]$NBE_gpp = (standYearTable_meanYear[i, ]$GPP - mixedAdditiveASimu$GPP) / mixedAdditiveASimu$GPP
+    standYearTable_meanYear[i, ]$NBE_tr = (standYearTable_meanYear[i, ]$TR - mixedAdditiveASimu$TR) / mixedAdditiveASimu$TR
+    standYearTable_meanYear[i, ]$NBE_ru_shortage_max = (standYearTable_meanYear[i, ]$RU_shortage_max - mixedAdditiveASimu$RU_shortage_max) / mixedAdditiveASimu$RU_shortage_max
+    standYearTable_meanYear[i, ]$NBE_ru_shortage_max_relative = (standYearTable_meanYear[i, ]$RU_shortage_max_relative - mixedAdditiveASimu$RU_shortage_max_relative) / mixedAdditiveASimu$RU_shortage_max_relative
+    standYearTable_meanYear[i, ]$NBE_rewMin = (standYearTable_meanYear[i, ]$REWmin - mixedAdditiveASimu$REWmin) / mixedAdditiveASimu$REWmin
+    
+  }
+}
+
+
+
+
+
+# Plots Simu yearly ----
+folderPlot = paste0("local_plots/", currentSimulation, "allSimuCheck_yearly/")
+yvars = c("Gha", "GPP", "NPP", "LAImaxThisYear", "BiomassOfReserves", "BiomassOfReservesBeforeRefill")
+
+for(i in 1:length(simuListRU50_st)){
+  name_simu = names(simuListRU50_st)[i]
+  aplot = simuPlots(simuListRU50_st[[i]], tableName = "y", xvar = "y", yvar = yvars)
+
+  saveGgPlot(aplot, saveGgPlot,
+             plot_height = 960, plot_width = NULL,
+             ratio = 4/3,
+             scale = 1, fileName = name_simu, fileSuffix = ".pdf")
+  rm(aplot)
+  rm(name_simu)
+}
+
+for(i in 1:length(simuListRU100_st)){
+  name_simu = names(simuListRU100_st)[i]
+  aplot = simuPlots(simuListRU100_st[[i]], tableName = "y", xvar = "y", yvar = yvars)
+
+  saveGgPlot(aplot, saveGgPlot,
+             plot_height = 960, plot_width = NULL,
+             ratio = 4/3,
+             scale = 1, fileName = name_simu, fileSuffix = ".pdf")
+  rm(aplot)
+  rm(name_simu)
+}
+
+
+
+
+# Plot organization of data ----
 
 # VARIABLES = nTree (LAI) x classSize x RU x composition
 # nTree (3) x classSize (3) x RU (2) x composition (4) = 72
@@ -156,36 +216,12 @@ ggplot(standYearTable_meanYear, aes(x = composition, y = TR, color = as.factor(R
 
 
 
-# Compute Net Biodiversity Effects (NBE)
-standYearTable_meanYear$NBE_gpp = 0
-standYearTable_meanYear$NBE_tr = 0
-standYearTable_meanYear$NBE_ru_shortage_max = 0
-standYearTable_meanYear$NBE_ru_shortage_max_relative = 0
-standYearTable_meanYear$NBE_rewMin = 0
-for(i in 1:dim(standYearTable_meanYear)[1]){
-  aSimu = standYearTable_meanYear[i, ]
-  if(!grepl(aSimu$composition, pattern = "pur")){
-    nTreeSimu = aSimu$nTree
-    classSizeSimu = aSimu$classSize
-    RUSimu = aSimu$RU
-    
-    beechMono = subset(standYearTable_meanYear, nTree == nTreeSimu & classSize == classSizeSimu & RU == RUSimu & composition == "HETpur")
-    firMono = subset(standYearTable_meanYear, nTree == nTreeSimu & classSize == classSizeSimu & RU == RUSimu & composition == "SAPpur")
-    
-    proportion = aSimu$beechCompositionRate
-    
-    numericalColumns = colnames(aSimu)[vapply(aSimu[1,], FUN = is.numeric, FUN.VALUE = FALSE, USE.NAMES = F)]
-    mixedAdditiveASimu = beechMono[, numericalColumns] * proportion + firMono[, numericalColumns] * (1-proportion) 
-    
-    standYearTable_meanYear[i, ]$NBE_gpp = (standYearTable_meanYear[i, ]$GPP - mixedAdditiveASimu$GPP) / mixedAdditiveASimu$GPP
-    standYearTable_meanYear[i, ]$NBE_tr = (standYearTable_meanYear[i, ]$TR - mixedAdditiveASimu$TR) / mixedAdditiveASimu$TR
-    standYearTable_meanYear[i, ]$NBE_ru_shortage_max = (standYearTable_meanYear[i, ]$RU_shortage_max - mixedAdditiveASimu$RU_shortage_max) / mixedAdditiveASimu$RU_shortage_max
-    standYearTable_meanYear[i, ]$NBE_ru_shortage_max_relative = (standYearTable_meanYear[i, ]$RU_shortage_max_relative - mixedAdditiveASimu$RU_shortage_max_relative) / mixedAdditiveASimu$RU_shortage_max_relative
-    standYearTable_meanYear[i, ]$NBE_rewMin = (standYearTable_meanYear[i, ]$REWmin - mixedAdditiveASimu$REWmin) / mixedAdditiveASimu$REWmin
-    
-  }
-}
 
+
+
+
+
+# PLOTS NBE ----
 # H1.1 et H1.2 : Evaluation of NBE on growth and transpiration
 # NBE is globally positive on growth and transpiration. NBE growth is more pronounced on Beech-dominant mixture, NBE transpiration is more pronounced on fir-dominant mixture
 ggplot(subset(standYearTable_meanYear, isMixed), aes(x = NBE_tr, y = NBE_gpp, color = composition)) + geom_point() + xlim(c(0, NA)) + ylim(c(0, NA))
@@ -229,3 +265,9 @@ ggplot(subset(standYearTable_meanYear, isMixed), aes(x = as.factor(RU), y = NBE_
 # --> comment rendre compte de l'effet du stress hydrique sur les dégats du peuplement ?
 
 
+
+
+# 10.04.2024 check daily simulation ----
+
+simuPlots(dsimuListRU50_st$RU50_01_2PB__1HETpur__Narbres_75__Nha_833, tableName = "d", xvar = "d",
+          yvar = waterDailyVariables)
