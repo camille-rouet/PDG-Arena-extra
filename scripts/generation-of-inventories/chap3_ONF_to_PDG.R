@@ -16,19 +16,19 @@ source("scripts/generation-of-inventories/CR_methods_for_inventory_generation.R"
 
 # PARAMETERS ----
 
-outputInventoryFolder = "inventories/2024-03-20_ONF/"
+outputInventoryFolder = "inventories/2024-04-10_ONF-test/"
 
 outputInConsole = FALSE
 # outputInConsole = TRUE # to comment
 
-targetCellWidth = 1.5
+targetCellWidth = 1
 
 # Put stand to zero slope
 forceNoSlope = FALSE
 
 nbAltitudeClasses = 5
 
-initYear = 1996
+initYear = 2011
 
 signifNumber = 4
 

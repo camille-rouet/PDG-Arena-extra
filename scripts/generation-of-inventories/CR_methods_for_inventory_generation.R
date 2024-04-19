@@ -1071,7 +1071,62 @@ computeIrregDemoMonoSpInventory = function(treesTable, cellsTable, idSpecies, al
 
 
 
-
+printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth, cellWidth, plotCrown = FALSE){
+  
+  if(plotCrown){
+    # add crown projection
+    if(mean(unique(treesTable$speciesName) %in% c("hetre",  "sapin")) != 1){
+      stop("Species in treesTable are not hetre or sapin")
+    }
+    
+    # from CastaneaSpecies_2022_05.txt, crownRadius1 and crownRadius2
+    treesTable$crownRadius = ifelse(treesTable$speciesName == "hetre", 0.1082, 0.08151) * treesTable$dbh + ifelse(treesTable$speciesName == "hetre", 1.04, 0.69535) 
+    treesTable$crownDiameterCm = treesTable$crownRadius *100 * 2
+    
+    npc = 40 # number of point circle
+    data_polygon = tibble(x = 0, y  = 0, id = 0, targetTrees = T, done = F, .rows = dim(treesTable)[1] * npc )
+    for(i in 1:dim(treesTable[1])){
+      tree = treesTable[i, ]
+      cr = tree$crownRadius
+      x_polygon = tree$x_abs + cr * cos( seq(0, 2 * pi, length.out = npc) ) 
+      y_polygon = tree$y_abs + cr * sin( seq(0, 2 * pi, length.out = npc) ) 
+      id_polygon = rep(tree$idTree, each = npc)
+      data_polygon[((i-1) * npc  + 1) :(i * npc), ] = tibble(x = x_polygon, y  = y_polygon, id = id_polygon, targetTrees = T, done = T)
+    }
+  }
+  
+  pointSizeMax = max(treesTable$dbh) / 10
+  pointSizeMin = min(treesTable$dbh) / 10
+  
+  aplot = ggplot(treesTable, aes(x = x_abs, y = y_abs, color = speciesName, size = dbh, shape = targetTrees)) + 
+    scale_size_continuous(range = c(pointSizeMin, pointSizeMax)) + geom_point() +
+    coord_cartesian(xlim = c(0, forestPlotWidth), ylim = c(0, forestPlotWidth)) + 
+    scale_color_manual(breaks = c("hetre", "sapin"), values=c("darkcyan", "darkgreen"))+ 
+    scale_shape_manual(breaks = c(TRUE, FALSE), values=c(19, 1))
+  
+  if(plotCrown){
+    aplot = aplot + geom_polygon(data = data_polygon, mapping =  aes(x = x, y = y, group = id), fill = rgb(0,0,0,0.05), color = rgb(0,0,0, 0.1), size = 0.1)
+  }
+  
+  
+  nLin = floor(forestPlotWidth / cellWidth)
+  x = rep(seq(0, forestPlotWidth, by = cellWidth), times = nLin+1)
+  y = rep(seq(0, forestPlotWidth, by = cellWidth), each = nLin+1)
+  pointTable = tibble(x_abs = x, y_abs = y)
+  
+  # add PDGCell grid point
+  aplot + geom_point(data = pointTable, shape = 16, color = rgb(0,0,0,0.1), size = 0.5)
+  
+  if(!dir.exists(folderPath)){
+    dir.create(path = folderPath)
+  }
+  
+  aplot = aplot + guides(shape="none") +  theme(legend.position="bottom")
+  imageRatio = 0.9
+  height = 960
+  width = height * imageRatio
+  ggsave(plot = aplot, path = folderPath, filename = paste0(fileName, ".jpg"), dpi = 0.5 * 300, width = width, height = height, units = "px")
+}
 
 
 
@@ -1146,23 +1201,12 @@ writeInventoryPDG = function(inventoryFolder, inventoryName, description,
   
   if("x_abs" %in% names(treesTable)){
     plotWidth = sqrt(pdgPlotParameters$nlin * pdgPlotParameters$ncol * pdgPlotParameters$cellWidth**2)
-    pointSizeMax = max(treesTable$dbh) / 10
-    pointSizeMin = min(treesTable$dbh) / 10
     
     treesTable$speciesName = demographic_parameters$speciesFrenchNames[ match(treesTable$sp, demographic_parameters$idSp) ]
     treesTable$targetTrees = treesTable$idTree < 1000000
     
-    aplot = ggplot(treesTable, aes(x = x_abs, y = y_abs, color = speciesName, size = dbh, shape = targetTrees)) + 
-      scale_size_continuous(range = c(pointSizeMin, pointSizeMax)) + geom_point() +
-      coord_cartesian(xlim = c(0, plotWidth), ylim = c(0, plotWidth)) + 
-      scale_color_manual(breaks = c("hetre", "sapin"), values=c("darkcyan", "darkgreen"))+ 
-      scale_shape_manual(breaks = c(TRUE, FALSE), values=c(19, 1))
-    
-    directoryPath = paste0(inventoryFolder, "0_plots_image")
-    if(!dir.exists(directoryPath)){
-      dir.create(path = directoryPath)
-    }
-    ggsave(plot = aplot, path = directoryPath, filename = paste0(inventoryName, ".jpg"), scale = 0.75)
+    printInventoryGraph(treesTable, paste0(inventoryFolder, "0_plots_image"), inventoryName, plotWidth, pdgPlotParameters$cellWidth, F)
+    printInventoryGraph(treesTable, paste0(inventoryFolder, "0_plots_image/withCrowns"), inventoryName, plotWidth, pdgPlotParameters$cellWidth, T)
   }
   
   
