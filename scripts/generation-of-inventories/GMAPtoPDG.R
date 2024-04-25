@@ -26,14 +26,15 @@ outputInConsole = FALSE # if TRUE, output is redirected in console instead of in
 # outputInConsole = TRUE # to comment
 
 # folder for writing inventories
-outputInventoryFolder = "inventories/2024-03-29-test/"
+outputInventoryFolder = "inventories/2024-04-19_GMAP_reproFALSE_depth1600/"
 
 # standard = trees are located and defined based on the GMAP inventory, output is one (eventually mixed) plot
 # regdemo_monosp = trees are all of the same (mean) age and (quadratic mean) dbh and they are located on a regular basis, two monospecific plot are made
 # regdemo_plurisp = trees of the same species are all of the same (mean) age and (quadratic mean) dbh and trees are located on a regular (randomized ?) basis, one plurispecific plot
 # irregdemo_monosp = trees age and dbh are conserved based on inventories, trees are located on a regular (randomized ?) basis, two monospecific plot are made 
+# allbutE1B = all modes but irregdemoMonosp
 # all = all modes are written
-inventoryMode = "all" 
+inventoryMode = "allbutE1B" 
 
 # if TRUE, LAI will be adjusted for each species (based on forrester allometry table). # If FALSE, LAI will be the same in regularized monospecific inventories and demography-fine plurispecific inventoriy
 useSpeciesLAIduringRegularization = TRUE
@@ -1420,7 +1421,7 @@ for(code_site in all_code_site){
   
   
   # Print E0 ----
-  if(inventoryMode == "regdemo_monosp" | inventoryMode == "all"){
+  if(inventoryMode == "regdemo_monosp" | inventoryMode == "all" | inventoryMode == "allbutE1B"){
     
       
     for(idSpecies in unique(trees$sp)){
@@ -1535,7 +1536,7 @@ for(code_site in all_code_site){
   }
   
   # Print E1A ----
-  if (inventoryMode == "regdemo_plurisp" | inventoryMode == "all"){
+  if (inventoryMode == "regdemo_plurisp" | inventoryMode == "all" | inventoryMode == "allbutE1B"){
     
     
     # cr-27.09.2023 : dans tous les cas, je fais regdemo plurisp
@@ -1596,7 +1597,7 @@ for(code_site in all_code_site){
   
   # Print E1B ----
   
-  if (inventoryMode == "irregdemo_monosp" | inventoryMode == "all"){
+  if (inventoryMode == "irregdemo_monosp" | inventoryMode == "all" ){
     if (length(unique(trees$sp)) <= 1){
       # do nothing, plurisp will be equivalent 
     }else{
