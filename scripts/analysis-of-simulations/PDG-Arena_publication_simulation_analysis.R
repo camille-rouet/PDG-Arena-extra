@@ -2,16 +2,12 @@
 # Script for simulation analysis of PDG-Arena and CASTANEA
 # Original paper (submitted to PCI Forest and Wood Sciences) : Rouet, Davi, Druel, Fady & Morin (2024): PDG-Arena: An eco-physiological model for characterizing tree-tree interactions in heterogeneous stands 
 
-# Recommandation for external user :
-#   1. Go to QUICK CONFIGURATION: load the .RData file & source "CRMethodsForSimulations.R" 
-#   2. Go directly to the graph sections (skip CONFIGURATION, IMPORT and CONVERSION sections)
-
-# Vocabulary :
-# PDG-Light : the previous name of PDG-Arena
-# E0 = RegdemoMonosp = RN inventories
-# E1A = RegdemoPlurisp = RN inventories
-# E1B = IrregdemoMonosp = irregular and monospecific inventories (not used in the publication)
-# E2 = IrregdemoPlurisp = O inventories
+# Recommandation for external user 
+#   1. Go to QUICK CONFIGURATION
+#   2. Load "simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment.RData" 
+#   Main variables of the .Rdata file are explained in "simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment_readme.txt"
+#   3. Source "CRMethodsForSimulations.R" 
+#   4. Go directly to the graph sections (skip CONFIGURATION, IMPORT and CONVERSION sections)
 
 
 # QUICK CONFIGURATION   --------------------------------------------------------
@@ -63,7 +59,8 @@ dGMAP_horsprod$treeGlobalId = paste0(dGMAP_horsprod$code_site, '_', dGMAP_horspr
 dGMAP_dendro = subset(dGMAP_dendro, site %in% c("vtx", "bg", "vl"))
 dGMAP_horsprod = subset(dGMAP_horsprod, site %in% c("vtx", "bg", "vl"))
 
-# GMAP table with all trees (ie even those who were not simulated)
+
+# GMAP table with all trees (ie even those who were not simulated, ie tree that were dead, from an other species than beech and fir, or from stand that were not simulated)
 treeYearTableGMAP_all = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod)
 
 
@@ -77,7 +74,7 @@ keepFilter = ""
 
 currentSimulation = "2023-12-15_goodHeightGoodAlignment/"
 simulationFolderGlobal = paste0("2023_simu_article/", currentSimulation)
-folderPlot = paste0("plots/", currentSimulation, "bazardeplot/")
+folderPlot = paste0("plots/", currentSimulation, "divers/")
 
 
 # import CASTANEA simulation
@@ -693,14 +690,14 @@ if(import_CAST){
 
 size = 4
 xValMin = 0 ; xValMax = 4.5e-3 ; yValMin = 0 ; yValMax = 4.5e-3 ; coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
-folderPlot = paste0("plots/", currentSimulation, "bazardeplot/")
+folderPlot = paste0("plots/", currentSimulation, "divers/")
 for(i in 1:length(standPeriodTable_list)){
-  standPeriodTable = standPeriodTable_list[[i]]
-  atitle = title_list[[i]]
-  ggplot(subset(standPeriodTable, period == "1996_2013"), 
+  a_standPeriodTable = standPeriodTable_list[[i]]
+  a_title = title_list[[i]]
+  ggplot(subset(a_standPeriodTable, period == "1996_2013"), 
          aes(x = WVIy_m2_mes, y = WVIy_m2_sim, color = composition, label = code_site_cut, shape = factor(site))
   ) + 
-    # atitle +
+    # a_title +
     # facet_grid( . ~ composition) +
     geom_text_repel(size = 3.5, alpha = 0.7) +
     geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
@@ -714,35 +711,35 @@ for(i in 1:length(standPeriodTable_list)){
                        values = c(15,19,17)) +
     annotate("text", x=1.3125, y=1.375, label= "1:1", size = 6)
   
-  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVIm_m2", "_", atitle$title, ".pdf"))
+  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVIm_m2", "_", a_title$title))
 }
 
 
 
 # other graphs
-ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = site)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + coord_limits
-
-ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = site)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + facet_grid(. ~composition) + coord_limits
-ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = composition)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + facet_grid(. ~site) + coord_limits
-
-ggplot(standPeriodTable_E2, aes(x = BAIy_mes, y = BAIy_sim)) + geom_point() + geom_abline(slope = 1, alpha = 0.25) + facet_grid(composition ~ period) + title_4 + coord_limits
-ggplot(standPeriodTable_E2, aes(x = BAIy_mes_scaled, y = GPPy_abs_sim_scaled)) + geom_point()+ geom_abline(slope = 1, alpha = 0.25) + facet_grid(. ~ composition) + title_4 
-
-
+# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = site)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + coord_limits
+# 
+# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = site)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + facet_grid(. ~composition) + coord_limits
+# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = composition)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + facet_grid(. ~site) + coord_limits
+# 
+# ggplot(standPeriodTable_E2, aes(x = BAIy_mes, y = BAIy_sim)) + geom_point() + geom_abline(slope = 1, alpha = 0.25) + facet_grid(composition ~ period) + title_4 + coord_limits
+# ggplot(standPeriodTable_E2, aes(x = BAIy_mes_scaled, y = GPPy_abs_sim_scaled)) + geom_point()+ geom_abline(slope = 1, alpha = 0.25) + facet_grid(. ~ composition) + title_4 
 
 
-# GRAPHE GPP
-ggplot(subset(standPeriodTable_E2, period == "1996_2013"), 
-       aes(x = BAIy_mes, y = BAIy_sim, color = composition, label = code_site_cut, shape = factor(site))
-) + 
-  atitle + 
-  facet_grid(composition ~ site) +
-  geom_text_repel(size = 3.5, alpha = 0.7) +
-  geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
-  coord_limits + scale_shape_manual(values = c(15,19,17)) 
 
-folderPlot = paste0("plots/", currentSimulation, "resultats/")
-saveLastGgPlot(folderPlot, plot_width = 1440, ratio = 4/3, fileName = paste0("bysitecompo_", atitle$title, ".png"))
+
+# GRAPHE GPP BY SITES AND COMPOSITION
+# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), 
+#        aes(x = BAIy_mes, y = BAIy_sim, color = composition, label = code_site_cut, shape = factor(site))
+# ) + 
+#   # a_title + 
+#   facet_grid(composition ~ site) +
+#   geom_text_repel(size = 3.5, alpha = 0.7) +
+#   geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
+#   scale_shape_manual(values = c(15,19,17)) 
+# 
+# folderPlot = paste0("plots/", currentSimulation, "divers/")
+# saveLastGgPlot(folderPlot, plot_width = 1440, ratio = 4/3, fileName = paste0("bysitecompo", ".png"))
 
 
 
@@ -776,7 +773,7 @@ rownames(correlationSimulationMatrix) = names(correlationSimulationMatrix)
 correlationMode = "correlation" # RMSE 1-r2 correlation
 variableOfInterest = "GPPy_m2_sim"
 
-folderPlot = paste0("plots/", currentSimulation, "bazardeplot/")
+folderPlot = paste0("plots/", currentSimulation, "divers/")
 
 nI = dim(correlationSimulationMatrix)[1]
 nJ = dim(correlationSimulationMatrix)[2]
@@ -844,7 +841,7 @@ ggcorrplot(myMat, legend.title = correlationMode,
         # legend.key.size = unit(1, 'cm'), # legend size
         text=element_text(size=textSize) # text size
   ) 
-folderPlot = paste0("plots/", currentSimulation, "bazardeplot/")
+folderPlot = paste0("plots/", currentSimulation, "divers/")
 saveLastGgPlot(folderPlot, plot_height = 720, ratio = 4/3, fileSuffix = ".pdf")
 
 
@@ -867,13 +864,17 @@ simulationComparaisonTable = get(paste0("standPeriodTable", suffix1))
 variableOfInterest = "GPPy_m2_sim"
 variableList = c("BAIy_sim", "BAIy_m2_sim", "BAIy_m2_sim", "WVIy_sim", "WVIy_m2_mes", "WVIy_m2_sim", "GPPy_abs_sim", "GPPy_m2_sim", "NPPy_abs_sim", "NPPy_m2_sim", "Rautoy_abs_sim", 
                  "vegAbso_MJm2Y", "vegAbsorbance", "vegAbsoPAR_MJm2Y", "vegAbsorbancePAR", 
-                 "REWmin", "RU_level_min", "RU_shortage_max")
+                 "REWmin", "RU_level_min", "RU_shortage_max", "transpiration")
 
+# add suffix1 to all variable names
 for(var in variableList){
   colnames(simulationComparaisonTable)[colnames(simulationComparaisonTable) == var] = paste0(var, suffix1)
 }
-simulationComparaisonTable = inner_join(simulationComparaisonTable, get(paste0("standPeriodTable", suffix2))) # rename all new columns if they are added
 
+# join tables from two simulations
+simulationComparaisonTable = inner_join(simulationComparaisonTable, get(paste0("standPeriodTable", suffix2)))
+
+# add suffix2 to all variable names
 for(var in variableList){
   colnames(simulationComparaisonTable)[colnames(simulationComparaisonTable) == var] = paste0(var, suffix2)
 }
@@ -914,7 +915,7 @@ ggplot(simulationComparaisonTable_sub,
   annotate("text", x=1700, y= 1600, label= "1:1", size = 4.5) +
   annotate("text", x=920, y= 1250, label= paste0("r = ", round(cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]]), 3)
   ) , size = 4.5) 
-folderPlot = paste0("plots/", currentSimulation, "bazardeplot/")
+folderPlot = paste0("plots/", currentSimulation, "divers/")
 saveLastGgPlot(folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
 
 
@@ -930,47 +931,47 @@ saveLastGgPlot(folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
 
 
 # 3.2 STATISTICS -------------------------------------------------------------------
-# (Part 3.2) Correlation and other coefficient on simulated versus measured variables
+# (Part 3.2) Correlation and error coefficients on simulated versus measured variables
 
 # Defines the variables of interest and coefficient to comptute
 var2 = "WVIy_m2_sim"
 var1 = "WVIy_m2_mes"
 coefficients_list = c("r2", "MAPE")
-# coefficients_list = c("correlation", "r2", "1-r2", "RMSE", "MAPE")
+# all coefficients : "correlation", "r2", "1-r2", "RMSE", "MAPE"
 
 # Compute the coefficients
 stat_list = list()
 index = 1
-for(standPeriodTable in standPeriodTable_list){
-  stat_list[[suffix_list[index]]] = getComparisonCoefficientPerSiteAndComposition(subset(standPeriodTable, period == "1996_2013"), var1, var2, coefficients_list)
+for(a_standPeriodTable in standPeriodTable_list){
+  stat_list[[suffix_list[index]]] = getComparisonCoefficientPerSiteAndComposition(subset(a_standPeriodTable, period == "1996_2013"), var1, var2, coefficients_list)
   index = index + 1
 }
 
 # Show the coefficients
-printList = list("STAT GLOBALES", 
-                 "Effet structure : E1A vs E2")
+printList = list("GLOBAL STAT", 
+                 "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
   printList[[stat_item_name]] = stat_list[[stat_item_name]][["global"]]
 }
 print(printList)
 
-printList = list("STAT MELANGE",
-                 "Effet diversité : E0 vs E1A", 
-                 "Effet structure : E1A vs E2")
+printList = list("MIXED PLOT STAT",
+                 "Mixing effect : E0 vs E1A", 
+                 "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
   printList[[stat_item_name]] = stat_list[[stat_item_name]][["comp_m"]]
 }
 print(printList)
 
-printList = list("STAT HETRES", 
-                 "Effet structure : E1A vs E2")
+printList = list("BEECH PLOT STAT", 
+                 "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
   printList[[stat_item_name]] = stat_list[[stat_item_name]][["comp_ph"]]
 }
 print(printList)
 
-printList = list("STAT SAPINS", 
-                 "Effet structure : E1A vs E2")
+printList = list("FIR PLOT STAT", 
+                 "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
   printList[[stat_item_name]] = stat_list[[stat_item_name]][["comp_sp"]]
 }
@@ -1096,7 +1097,7 @@ lollypopTable_long$simu = str_match(lollypopTable_long$variable, pattern = "E0|E
 #   # ylab("Canopy absorbance") +
 #   xlab("Placette")
 # 
-# folderPlot = paste0("plots/", currentSimulation, "bazardeplot/")
+# folderPlot = paste0("plots/", currentSimulation, "divers/")
 # saveLastGgPlot(folderPlot, plot_height = 720, ratio = 4/3, fileSuffix = ".pdf")
 
 

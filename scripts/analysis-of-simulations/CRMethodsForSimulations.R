@@ -3520,7 +3520,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   nIter = length(dGMAP_horsprod$treeGlobalId)
   pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=") 
   
-  # for all line of dGMAP_dendro
+  # for all line of dGMAP_horsprod
   for(i in 1:nIter){ # loop on trees
     dGMAP_horsprod_tree = dGMAP_horsprod[i,]
     treeGlobalId = dGMAP_horsprod_tree$treeGlobalId
