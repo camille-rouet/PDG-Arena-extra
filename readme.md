@@ -20,6 +20,14 @@ Here are the files used in this publication:
 
 — This folder contains the virtual inventories used in the simulation
 
+> inventories/2023-12-15_GMAP_hauteurMoy_NoSlope_goodAlignment/sites_description/LAI_GMAP.csv
+
+— Data table describing the simulated plots and in particular their Leaf Area Index
+
+> inventories/2023-12-15_GMAP_hauteurMoy_NoSlope_goodAlignment/sites_description/soil_CASTANEA_GMAP.csv
+
+— Data table describing the soil texture of GMAP sites
+
 > scripts/generation-of-inventories/GMAPtoPDG.R 
 
 — The script used to generates inventories
@@ -30,11 +38,7 @@ Here are the files used in this publication:
 
 > simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment.RData 
 
-— A Rdata file containing the simulation results and the dataset used in the publication
-
-> simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment_readme.txt 
-
-— It describes the above-mentioned dataset
+— A Rdata file containing the simulation results and the dataset used in the publication (see the accompanying readme)
 
 > simulation-data/paper-PDG-Arena/multiScripts_copy.txt 
 

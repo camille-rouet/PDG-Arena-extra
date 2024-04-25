@@ -4328,7 +4328,12 @@ getCodeSiteFromSimulationName = function(nameSimu){
 
 # extract GMAP site from code_site
 getSiteFromCodeSite = function(code_site){
-  for(site in c("bg", "vl", "vtx")){
+  
+  if(length(code_site) > 1){
+    return(vapply(code_site, FUN = getSiteFromCodeSite, FUN.VALUE = "", USE.NAMES = F))
+  }
+  
+  for(site in c("bg", "vl", "vtx", "la", "gl", "sb")){
     sitePattern = paste0(site, "_")
     if(grepl(code_site, pattern = sitePattern)){
       return(site)
