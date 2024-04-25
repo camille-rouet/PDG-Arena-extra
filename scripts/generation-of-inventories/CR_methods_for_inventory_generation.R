@@ -1071,7 +1071,7 @@ computeIrregDemoMonoSpInventory = function(treesTable, cellsTable, idSpecies, al
 
 
 
-printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth, cellWidth, plotCrown = FALSE){
+printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth, cellWidth, plotCrown = FALSE, useRDI = FALSE, ratioOnRadius = 1){
   
   if(plotCrown){
     # add crown projection
@@ -1081,7 +1081,25 @@ printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth
     
     # from CastaneaSpecies_2022_05.txt, crownRadius1 and crownRadius2
     treesTable$crownRadius = ifelse(treesTable$speciesName == "hetre", 0.1082, 0.08151) * treesTable$dbh + ifelse(treesTable$speciesName == "hetre", 1.04, 0.69535) 
-    treesTable$crownDiameterCm = treesTable$crownRadius *100 * 2
+    if(useRDI){
+      standArea_ha = forestPlotWidth**2 / 10000
+      nha = dim(treesTable)[1] / standArea_ha
+      meanDbh = mean(treesTable$dbh)
+      RDIbeech = max(1, nha / exp(12.95  - 1.941 * log(meanDbh)))
+      RDIfir = max(1, nha/ exp(12.621 - 1.779 * log(meanDbh)))
+      
+      cat(paste0("RDI beech: ", RDIbeech, "\nRDI fir: ", RDIfir))
+      
+      # convert to crown area
+      treesTable$crownArea = pi*treesTable$crownRadius**2
+      
+      # RDI effect
+      treesTable$crownArea = ifelse(treesTable$speciesName == "hetre", treesTable$crownArea / RDIbeech, treesTable$crownArea / RDIfir)
+      treesTable$crownArea = vapply(treesTable$crownArea, FUN = function(x) max(5, x), FUN.VALUE = 0)
+      
+      # convert to crown radius
+      treesTable$crownRadius = sqrt(treesTable$crownArea  / pi)
+    }
     
     npc = 40 # number of point circle
     data_polygon = tibble(x = 0, y  = 0, id = 0, targetTrees = T, done = F, .rows = dim(treesTable)[1] * npc )
@@ -1137,7 +1155,7 @@ printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth
 writeInventoryPDG = function(inventoryFolder, inventoryName, description,
                              cellsTable, treesTable, 
                              pdgInventoryOptions,
-                             altitudeClasses_, allele1_1, allele2_1, allele1_2, allele2_2, thisScriptOptions){
+                             altitudeClasses_, allele1_1, allele2_1, allele1_2, allele2_2, thisScriptOptions, ratioOnRadiusPlot = 1){
   
   if(!"pdgPlotParameters" %in% names(pdgInventoryOptions)){
     stop("pdgPlotParameters not in pdgInventoryOptions")
@@ -1205,8 +1223,8 @@ writeInventoryPDG = function(inventoryFolder, inventoryName, description,
     treesTable$speciesName = demographic_parameters$speciesFrenchNames[ match(treesTable$sp, demographic_parameters$idSp) ]
     treesTable$targetTrees = treesTable$idTree < 1000000
     
-    printInventoryGraph(treesTable, paste0(inventoryFolder, "0_plots_image"), inventoryName, plotWidth, pdgPlotParameters$cellWidth, F)
-    printInventoryGraph(treesTable, paste0(inventoryFolder, "0_plots_image/withCrowns"), inventoryName, plotWidth, pdgPlotParameters$cellWidth, T)
+    printInventoryGraph(treesTable, paste0(inventoryFolder, "0_plots_image"), inventoryName, plotWidth, pdgPlotParameters$cellWidth, F, T, ratioOnRadius = ratioOnRadiusPlot)
+    printInventoryGraph(treesTable, paste0(inventoryFolder, "0_plots_image/withCrowns"), inventoryName, plotWidth, pdgPlotParameters$cellWidth, T, T, ratioOnRadius = ratioOnRadiusPlot)
   }
   
   
