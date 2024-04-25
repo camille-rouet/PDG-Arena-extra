@@ -32,9 +32,11 @@ For these four types of table, each entry contains variables corresponding to th
 
 Additionnaly, the variables WVIy_mes and BAIy_mes are given and do note represent simulated variables. They are respectively, the yearly wood volume increment and basal area increment measured at stand scale.
 
+
 # Simulation lists
 
 These following objects may be hard to manipulate; we then suggest to contact the first author of the publication if you want to go further.
+
 Lists beginning by 'simuList' contains all the simulation results at a yearly level. The output are described on the CASTANEA documentation, which is not public yet and can be shared on request.
 
 First suffixes of simulation lists indicates the inventory type used in the simulation (see vocabulary). Suffix '_st' indicates that results were converted from individual scale to stand scale.
