@@ -47,6 +47,7 @@ dGMAP_horsprod = read_delim(path, delim = "\t", show_col_types = FALSE)
 # remove dead trees (num_arbre is like "mort")
 num_arbre_conversionNumeric = suppressWarnings(as.numeric(dGMAP_horsprod$num_arbre))
 dGMAP_horsprod = subset(dGMAP_horsprod, !is.na(num_arbre_conversionNumeric))
+dGMAP_horsprod = subset(dGMAP_horsprod, mort == 0)
 
 
 # import all GMAP tree informations
@@ -403,7 +404,8 @@ treeid_simulated_notmeasured = treeid_simulated[!treeid_simulated %in% treeid_me
 treeid_measured_notsimulated = treeid_measured[!treeid_measured %in% treeid_simulated]
 warning(paste0("These trees were measured but not simulated:\n", paste0(treeid_measured_notsimulated, collapse = "\n")))
 
-treeYearTableGMAP = makeGMAP_TreeYearTable(dGMAP_dendro, subset(dGMAP_horsprod, treeGlobalId %in% treeid_simulated))
+dGMAP_horsprod_simulatedTrees = subset(dGMAP_horsprod, treeGlobalId %in% treeid_simulated)
+treeYearTableGMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod_simulatedTrees)
 treeYearTableGMAP = extrapoleMissingMeasuredBAI(treeYearTableGMAP)
 treeYearTable_E2 = left_join(treeYearTable_E2, treeYearTableGMAP)
 
@@ -1188,3 +1190,45 @@ wilcox.test(lollypopTable$vegAbsorbance_E0, lollypopTable$vegAbsorbance_E1A, pai
 
 
 
+
+
+
+
+# 2024.04.26 Check height ~ dbh relationship
+folderPlot = paste0("plots/", currentSimulation, "height_dbh/")
+
+# 
+ggplot(dGMAP_horsprod_simulatedTrees, aes(x = dbh, y = htot, color = site)) + geom_point() + facet_wrap( essence ~ site ) + ylim(c(0, NA)) + xlim(c(0, NA)) + guides(color = F)
+saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("height_dbh"))
+
+ggplot(dGMAP_horsprod_simulatedTrees, aes(x = log(dbh), y = log(htot), color = site)) + geom_point() + geom_smooth(method = "lm") + facet_wrap( essence ~ site ) + ylim(c(0, NA)) + xlim(c(0, NA))+ guides(color = F)
+saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("logheight_logdbh"))
+
+
+lm_table = tibble(essence = "", site = "", intercept = 0, slope = 0, .rows = length(unique(dGMAP_horsprod_simulatedTrees$essence)) * length(unique(dGMAP_horsprod_simulatedTrees$site)))
+i = 1
+
+
+for(a_species in unique(dGMAP_horsprod_simulatedTrees$essence)){
+  for(a_site in unique(dGMAP_horsprod_simulatedTrees$site)){
+    lm1 = lm(data = dGMAP_horsprod_simulatedTrees, 
+             subset = essence == a_species & site == a_site,
+             formula = log(htot) ~ log(dbh))
+    lm_table[i, ]$essence = a_species
+    lm_table[i, ]$site = a_site
+    intercept = lm1$coefficients["(Intercept)"]
+    slope = lm1$coefficients["log(dbh)"]
+    lm_table[i, ]$intercept = intercept
+    lm_table[i, ]$slope = slope
+    i = i +1
+    
+    ggplot(subset(dGMAP_horsprod_simulatedTrees, essence == a_species & site == a_site, color = site), 
+           aes(x = dbh, y = htot)) + geom_point() +
+      # geom_smooth(method = "lm", formula = y ~ log(x)) + 
+      ylim(c(0, max(dGMAP_horsprod_simulatedTrees$htot))) + xlim(c(0, max(dGMAP_horsprod_simulatedTrees$dbh))) +
+      geom_function( fun = function(x) exp(intercept + slope * log(x)))
+    
+    saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("height_dbh_", a_species, "_", a_site))
+  
+  }
+}
