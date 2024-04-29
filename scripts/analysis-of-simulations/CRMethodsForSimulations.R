@@ -3345,6 +3345,30 @@ saveLastGgPlot = function(plotfolderPlot, plot_height = 960, plot_width = NULL, 
 # ..............................................................................
 # Simulation analysis ----------------------------------------------------------
 
+getNumberOfTrees = function(simulationList){
+  
+  nTreeTot = 0
+  for(code_site in names(simulationList)){
+    yRes = simulationList[[code_site]]$yearlyResults
+    nTreeCodeSite = length(unique(yRes$idFmCell)) 
+    
+    nTreeTot = nTreeTot + nTreeCodeSite
+  }
+  return(nTreeTot)
+}
+
+getSimulatedTreeIds = function(simulationList){
+  treeIds = tibble(id = "", .rows = getNumberOfTrees(simulationList))
+  
+  index = 1
+  for(code_site in names(simulationList)){
+    yRes = simulationList[[code_site]]$yearlyResults
+    ids = paste0(code_site, "_", unique(yRes$idFmCell))
+    treeIds[index:(index + length(ids) - 1), ]$id = ids
+    index = index + length(ids)
+  }
+  return(treeIds$id)
+}
 
 
 # function: returns a numerical index based on num_arbre and num_tige from GMAP data (same method to define idFmCell in GMAPtoPDG.R)
@@ -3508,7 +3532,6 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   # create table
   treeYearTableGMAP = tibble( treeGlobalId = "",
           code_site = "",
-          site = "",
           year = 0,
           BAI_mes = 0,
           WVI_mes = 0, # in m3
@@ -3534,7 +3557,6 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
     treeGlobalId = dGMAP_horsprod_tree$treeGlobalId
     
     code_site = dGMAP_horsprod_tree$code_site
-    site = getSiteFromCodeSite(code_site)
     species = dGMAP_horsprod_tree$essence
     dbhFinal = dGMAP_horsprod_tree$circonference / pi # in cm
     hauteurFinal = dGMAP_horsprod_tree$htot
@@ -3565,19 +3587,18 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
       
       treeYearTableGMAP[index_line, 1] = treeGlobalId
       treeYearTableGMAP[index_line, 2] = code_site
-      treeYearTableGMAP[index_line, 3] = site
-      treeYearTableGMAP[index_line, 4] = year
-      treeYearTableGMAP[index_line, 5] = BAI_mes
-      treeYearTableGMAP[index_line, 6] = WVI_mes
-      treeYearTableGMAP[index_line, 7] = WVIc_mes
-      treeYearTableGMAP[index_line, 8] = species
-      treeYearTableGMAP[index_line, 9] = dbhFinal
-      treeYearTableGMAP[index_line, 10] = hauteurFinal
+      treeYearTableGMAP[index_line, 3] = year
+      treeYearTableGMAP[index_line, 4] = BAI_mes
+      treeYearTableGMAP[index_line, 5] = WVI_mes
+      treeYearTableGMAP[index_line, 6] = WVIc_mes
+      treeYearTableGMAP[index_line, 7] = species
+      treeYearTableGMAP[index_line, 8] = dbhFinal
+      treeYearTableGMAP[index_line, 9] = hauteurFinal
+      treeYearTableGMAP[index_line, 10] = 0
       treeYearTableGMAP[index_line, 11] = 0
-      treeYearTableGMAP[index_line, 12] = 0
-      treeYearTableGMAP[index_line, 13] = hcb
-      treeYearTableGMAP[index_line, 14] = span
-      treeYearTableGMAP[index_line, 15] = goodCarrots
+      treeYearTableGMAP[index_line, 12] = hcb
+      treeYearTableGMAP[index_line, 13] = span
+      treeYearTableGMAP[index_line, 14] = goodCarrots
       index_line = index_line + 1
       
       
@@ -3585,6 +3606,12 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
     setTxtProgressBar(pb, i) # change progress bar
   } # end loop on trees
   close(pb)
+  
+  
+  treeYearTableGMAP$site = vapply(treeYearTableGMAP$treeGlobalId, function(x) strsplit(x, "_")[[1]][1], FUN.VALUE = "example")
+  treeYearTableGMAP$composition = vapply(treeYearTableGMAP$treeGlobalId, function(x) strsplit(x, "_")[[1]][3], FUN.VALUE = "example")
+  treeYearTableGMAP$triplet = vapply(treeYearTableGMAP$treeGlobalId, function(x){ split = strsplit(x, "_")[[1]] ; return(paste(split[1], split[2], split[4],sep = "_") )}, FUN.VALUE = "example")
+  treeYearTableGMAP$code_site = vapply(treeYearTableGMAP$treeGlobalId, function(x){ split = strsplit(x, "_")[[1]] ; return(paste(split[1:4], collapse = "_"))}, FUN.VALUE = "example")
   
   
   
@@ -3634,6 +3661,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
     a_code_site = code_site_list[i]
     treeYearTable_stand = subset(treeYearTableGMAP, code_site == a_code_site)
     
+    
     # for all years
     for(ayear in unique(treeYearTable_stand$year)){
       treeYearTable_stand_year = subset(treeYearTable_stand, year == ayear)
@@ -3645,9 +3673,9 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
         
         # si aucun individu de l'espece n'est present, on utilise le rapport BAI/BA des individus carrotés de même espèce, code_site et années
         if(dim(treeYearTable_stand_year_species_measured)[1] == 0){
-          aSite = getCodeSiteFromSimulationName(a_code_site)
+          aSite = getSiteFromCodeSite(a_code_site)
           # treeYearTable_stand_year_species_measured = subset(treeYearTable_stand_year, goodCarrots == TRUE)
-          treeYearTable_stand_year_species_measured = subset(treeYearTableGMAP, size == aSite & species == aSpecies & year == ayear & goodCarrots == TRUE)
+          treeYearTable_stand_year_species_measured = subset(treeYearTableGMAP, site == aSite & species == aSpecies & year == ayear & goodCarrots == TRUE)
         }
         
         meanBAIonBA = mean(treeYearTable_stand_year_species_measured$BAI_mes / treeYearTable_stand_year_species_measured$basalAreaFinal)
@@ -4081,8 +4109,10 @@ makeTreePeriodTable = function(treeYearTable, periodList){
                             WVIy_mes = 0,
                             WVIcy_mes = 0, # corrected, in cm3
                             species = "",
-                            dbh = 0,
-                            hauteur = 0,
+                            dbhFinal = 0,
+                            hauteurFinal = 0,
+                            dbhRetro = 0,
+                            hauteurRetro = 0,
                             hcb = 0,
                             span = 0,
                             .rows = nTreePeriodTot)
@@ -4118,10 +4148,12 @@ makeTreePeriodTable = function(treeYearTable, periodList){
       treePeriodTable[index_line, 15] = sum(treeYearTable_tree_periodSubset$WVI_mes) / nYearsPeriod
       treePeriodTable[index_line, 16] = sum(treeYearTable_tree_periodSubset$WVIc_mes) / nYearsPeriod
       treePeriodTable[index_line, 17] = unique(treeYearTable_tree$species)
-      treePeriodTable[index_line, 18] = unique(treeYearTable_tree$dbh)
-      treePeriodTable[index_line, 19] = unique(treeYearTable_tree$hauteur)
-      treePeriodTable[index_line, 20] = unique(treeYearTable_tree$hcb)
-      treePeriodTable[index_line, 21] = unique(treeYearTable_tree$span)
+      treePeriodTable[index_line, 18] = unique(treeYearTable_tree$dbhFinal)
+      treePeriodTable[index_line, 19] = unique(treeYearTable_tree$hauteurFinal)
+      treePeriodTable[index_line, 20] = mean(treeYearTable_tree_periodSubset$dbhRetro)
+      treePeriodTable[index_line, 21] = mean(treeYearTable_tree_periodSubset$hauteurRetro)
+      treePeriodTable[index_line, 22] = unique(treeYearTable_tree$hcb)
+      treePeriodTable[index_line, 23] = unique(treeYearTable_tree$span)
       
       index_line = index_line + 1
       
