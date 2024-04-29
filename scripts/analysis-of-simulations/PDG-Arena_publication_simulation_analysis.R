@@ -62,7 +62,7 @@ dGMAP_horsprod = subset(dGMAP_horsprod, site %in% c("vtx", "bg", "vl"))
 
 
 # GMAP table with all trees (ie even those who were not simulated, ie tree that were dead, from an other species than beech and fir, or from stand that were not simulated)
-treeYearTableGMAP_all = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod)
+treeYearTable_GMAP_all = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod)
 
 
 
@@ -393,44 +393,51 @@ dGMAP_horsprod = subset(dGMAP_horsprod, site %in% siteList)
 # Convert simulation lists into TREE-YEAR tables (for GMAP, E1B and E2) and STAND-YEAR tables (for GMAP, CASTANEA, E0, E1A, E1B and E2)
 # TREE-PERIOD and STAND-PERIOD tables are also computed (period are range of years)
 
-# E2 mode
-# i. make the primary tree-year table
-treeYearTable_E2 = makeTreeYearTable(simuListIrregdemoPlurisp)
+periodList = list(c(1996, 2002), c(2003, 2006), c(2007, 2013), c(1996, 2013))
 
 
-treeid_simulated = unique(treeYearTable_E2$treeGlobalId)
+# GMAP TABLES
+
+treeid_simulated = getSimulatedTreeIds(simuListIrregdemoPlurisp)
 treeid_measured = unique(dGMAP_dendro$treeGlobalId)
 treeid_simulated_notmeasured = treeid_simulated[!treeid_simulated %in% treeid_measured]
 treeid_measured_notsimulated = treeid_measured[!treeid_measured %in% treeid_simulated]
 warning(paste0("These trees were measured but not simulated:\n", paste0(treeid_measured_notsimulated, collapse = "\n")))
-
 dGMAP_horsprod_simulatedTrees = subset(dGMAP_horsprod, treeGlobalId %in% treeid_simulated)
-treeYearTableGMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod_simulatedTrees)
-treeYearTableGMAP = extrapoleMissingMeasuredBAI(treeYearTableGMAP)
-treeYearTable_E2 = left_join(treeYearTable_E2, treeYearTableGMAP)
 
+# tree year
+treeYearTable_GMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod_simulatedTrees)
+
+# all should be FALSE
+table(is.na(treeYearTable_GMAP$BAI_mes))
+
+# stand year
+standYearTable_GMAP = makeStandYearTable(treeYearTable_GMAP)
+
+standYearTable_GMAP$standArea_m2 = -1
+for(a_code_site in unique(standYearTable_GMAP$code_site)){
+  standYearTable_GMAP[standYearTable_GMAP$code_site == a_code_site, ]$standArea_m2 = simuListIrregdemoPlurisp[[a_code_site]]$inventory$standArea_m2
+}
+
+# GMAP tree-period and stand-period
+treePeriodTable_GMAP = makeTreePeriodTable(treeYearTable = treeYearTable_GMAP, periodList)
+standPeriodTable_GMAP = makeStandPeriodTable(standYearTable_GMAP, periodList) # warnings because physiological variables are imported in makeStandYearTableFromStandScale only
+
+
+# E2 individuals
+# i. make the primary tree-year table
+treeYearTable_E2 = makeTreeYearTable(simuListIrregdemoPlurisp)
+treeYearTable_E2 = left_join(treeYearTable_E2, treeYearTable_GMAP)
 
 # Check : ALL should be FALSE
 table(treeYearTable_E2$BAI_mes == -999)
 table(is.na(treeYearTable_E2$BAI_mes))
 
-# ii. make stand-year table
-standYearTable_E2 = makeStandYearTable(treeYearTable_E2)
-
 # iii. make tree-period and stand-period tables
-
-periodList = list(c(1996, 2002), c(2003, 2006), c(2007, 2013), c(1996, 2013))
 treePeriodTable_E2 = makeTreePeriodTable(treeYearTable = treeYearTable_E2, periodList)
-standPeriodTable_E2 = makeStandPeriodTable(standYearTable_E2, periodList)
-# end E2 mode
-
-# standYearTable_GMAP (based on standYearTable_E2)
-standYearTable_GMAP = standYearTable_E2[, colnames(standYearTable_E2)[! colnames(standYearTable_E2) %in% c("GPPabs_sim", "BAI_sim", "WVI_sim")]]
-# treeYearTableGMAP
 
 
-
-# E1B mode (irregdemo monosp recombiné)
+# E1B individuals  (irregdemo monosp recombiné)
 # i. make the primary tree-year table
 if(import_irreg_demo_monosp){
   treeYearTable_E1B = makeTreeYearTable(combSimuListIrregdemoMonosp)
@@ -443,41 +450,31 @@ if(import_irreg_demo_monosp){
   
   warning(paste0("These trees were measured but not simulated:\n", paste0(treeid_measured_notsimulated, collapse = "\n")))
   
-  # treeYearTableGMAP = makeGMAP_TreeYearTable(dGMAP_dendro, subset(dGMAP_horsprod, treeGlobalId %in% treeid_simulated))
-  # treeYearTableGMAP = extrapoleMissingMeasuredBAI(treeYearTableGMAP)
-  treeYearTable_E1B = left_join(treeYearTable_E1B, treeYearTableGMAP)
+  treeYearTable_E1B = left_join(treeYearTable_E1B, treeYearTable_GMAP)
   
   
   # Check : ALL should be FALSE
   table(treeYearTable_E1B$BAI_mes == -999)
   table(is.na(treeYearTable_E1B$BAI_mes))
   
-  # ii. make stand-year table
-  standYearTable_E1B = makeStandYearTable(treeYearTable_E1B)
-  
-  # iii. make tree-period and stand-period tables
-  
-  periodList = list(c(1996, 2002), c(2003, 2006), c(2007, 2013), c(1996, 2013))
   treePeriodTable_E1B = makeTreePeriodTable(treeYearTable = treeYearTable_E1B, periodList)
-  standPeriodTable_E1B = makeStandPeriodTable(standYearTable_E1B, periodList)
 }
 # end E1B mode
 
 
-# add stand area to standYearTable_GMAP
-standYearTable_GMAP$standArea_m2 = -1
-for(a_code_site in unique(standYearTable_GMAP$code_site)){
-  standYearTable_GMAP[standYearTable_GMAP$code_site == a_code_site, ]$standArea_m2 = simuListIrregdemoPlurisp[[a_code_site]]$inventory$standArea_m2
-}
 
 
 # STAND-YEAR tables from stand scale simulation
+standYearTable_E2 = makeStandYearTableFromStandScale(simuListIrregdemoPlurisp_st, standYearTable_GMAP)
 standYearTable_E0 = makeStandYearTableFromStandScale(combSimuListRegdemoMonosp_st, standYearTable_GMAP)
 if(import_CAST)
   standYearTable_CAST = makeStandYearTableFromStandScale(combSimuListCAST, standYearTable_GMAP)
 standYearTable_E1A = makeStandYearTableFromStandScale(simuListRegdemoPlurisp_st, standYearTable_GMAP)
 standYearTable_E0PRELI = makeStandYearTableFromStandScale(combSimuListPreli, standYearTable_GMAP)
 
+if(import_irreg_demo_monosp){
+  standYearTable_E1B_fromStand = makeStandYearTableFromStandScale(combSimuListIrregdemoMonosp_st, standYearTable_GMAP)
+}
 # # CASTANEA "bis" case
 # standYearTable_E0PRELIbis = makeCASTANEAstandYearTable(simuListIrregdemoPlurisp_init, simuListIrregdemoPlurisp_preli)
 # standYearTable_E0PRELIbis$code_site = getCodeSiteFromSimulationName(standYearTable_E0PRELIbis$code_site)
@@ -487,26 +484,14 @@ standYearTable_E0PRELI = makeStandYearTableFromStandScale(combSimuListPreli, sta
 
 
 # STAND-PERIOD tables from stand scale simulation
+standPeriodTable_E2 = makeStandPeriodTable(standYearTable_E2, periodList)
 standPeriodTable_E0 = makeStandPeriodTable(standYearTable_E0, periodList)
 if(import_CAST)
   standPeriodTable_CAST = makeStandPeriodTable(standYearTable_CAST, periodList)
 standPeriodTable_E1A = makeStandPeriodTable(standYearTable_E1A, periodList)
 standPeriodTable_E0PRELI = makeStandPeriodTable(standYearTable_E0PRELI, periodList)
 # standPeriodTable_E0PRELIbis = makeStandPeriodTable(standYearTable_E0PRELIbis, periodList)
-
-standPeriodTable_GMAP = standPeriodTable_E2
-standPeriodTable_GMAP$BAIy_sim = standPeriodTable_GMAP$BAIy_mes
-standPeriodTable_GMAP$GPPy_abs_sim = 0
-
-
-# E2 and E1B modes, computed directly from stand scale simulation lists
-standYearTable_E2_fromStand = makeStandYearTableFromStandScale(simuListIrregdemoPlurisp_st, standYearTable_GMAP)
-standPeriodTable_E2_fromStand = makeStandPeriodTable(standYearTable_E2_fromStand, periodList)
-standPeriodTable_E2_from_indiv = standPeriodTable_E2
-standPeriodTable_E2 = standPeriodTable_E2_fromStand
-
 if(import_irreg_demo_monosp){
-  standYearTable_E1B_fromStand = makeStandYearTableFromStandScale(combSimuListIrregdemoMonosp_st, standYearTable_GMAP)
   standPeriodTable_E1B_fromStand = makeStandPeriodTable(standYearTable_E1B_fromStand, periodList)
 }
 
@@ -603,7 +588,6 @@ changeUnit_TableList = function(a_standPeriodTable, simuList_st){
 
 # Add columns for stand-period table and add units
 standPeriodTable_E2 = addNewColumns(standPeriodTable_E2, simuListIrregdemoPlurisp_st)
-standPeriodTable_E2_fromStand = addNewColumns(standPeriodTable_E2_fromStand, simuListIrregdemoPlurisp_st)
 if(import_irreg_demo_monosp){
   standPeriodTable_E1B = addNewColumns(standPeriodTable_E1B, simuListIrregdemoPlurisp_st)
   standYearTable_E1B_fromStand = addNewColumns(standYearTable_E1B_fromStand, simuListIrregdemoPlurisp_st)
@@ -619,7 +603,6 @@ standPeriodTable_GMAP = addNewColumns(standPeriodTable_GMAP, simuListIrregdemoPl
 
 # CHANGE UNIT /!\ DO NOT RE-EXECUTE THESE LINES, this would change the values
 standPeriodTable_E2 = changeUnit_TableList(standPeriodTable_E2, simuListIrregdemoPlurisp_st)
-standPeriodTable_E2_fromStand = changeUnit_TableList(standPeriodTable_E2_fromStand, simuListIrregdemoPlurisp_st)
 if(import_irreg_demo_monosp){
   standPeriodTable_E1B = changeUnit_TableList(standPeriodTable_E1B, simuListIrregdemoPlurisp_st)
   standYearTable_E1B_fromStand = changeUnit_TableList(standYearTable_E1B_fromStand, simuListIrregdemoPlurisp_st)
@@ -994,8 +977,6 @@ print(printList)
 # 3.3 BOXPLOT OF VARIABLES ---------------------------------------------------------
 # (Part 3.3) Comparison of simulated variables between modelling situations
 
-standPeriodTable_E2 = standPeriodTable_E2_fromStand
-
 # Filter on a composition set
 # all: "", mixed: "m", pure beech: "ph", pure fir: "sp"
 filter_composition = "m"
@@ -1207,7 +1188,6 @@ saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("lo
 
 lm_table = tibble(essence = "", site = "", intercept = 0, slope = 0, .rows = length(unique(dGMAP_horsprod_simulatedTrees$essence)) * length(unique(dGMAP_horsprod_simulatedTrees$site)))
 i = 1
-
 
 for(a_species in unique(dGMAP_horsprod_simulatedTrees$essence)){
   for(a_site in unique(dGMAP_horsprod_simulatedTrees$site)){

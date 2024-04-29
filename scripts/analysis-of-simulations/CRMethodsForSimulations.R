@@ -3413,6 +3413,7 @@ makeTreeYearTable = function(simulationList){
                        absorbedPAR_abs_sm = 0,
                        BAI_sim = 0, # BAI from mm2 to cm2
                        WVI_sim = 0, # in m3
+                       WVIo_sim = 0, # in cm3, original wood volume increment
                        .rows = nYearTreeTot) 
   
   
@@ -3442,6 +3443,7 @@ makeTreeYearTable = function(simulationList){
       treeYearTable[index_line, 8] = yearlyResultsSimuLine$vegPAR_yearlyMJm2 * yearlyResultsSimuLine$crownProjectionThisYear
       treeYearTable[index_line, 9] = yearlyResultsSimuLine$BAI * 1e-2 # BAI from mm2 to cm2
       treeYearTable[index_line, 10] = yearlyResultsSimuLine$WVI # in m3
+      treeYearTable[index_line, 11] = yearlyResultsSimuLine$WVI_real # in cm3
       
       index_line = index_line + 1
       setTxtProgressBar(pb, index_line) # change progress bar
@@ -3498,6 +3500,7 @@ makeTreeYearTable = function(simulationList){
 # one line per year of measure in dGMAP_dendro and per stem found in dGMAP_horsprod
 makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   
+  
   # find table dimension 
   yearsLoop = 1993:2013
   nTreeYearTot = length(dGMAP_horsprod$treeGlobalId) * length(yearsLoop)
@@ -3505,12 +3508,16 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   # create table
   treeYearTableGMAP = tibble( treeGlobalId = "",
           code_site = "",
+          site = "",
           year = 0,
           BAI_mes = 0,
-          WVI_mes = 0,
+          WVI_mes = 0, # in m3
+          WVIc_mes = 0, # corrected with form factor and tree retrospective height in cm3
           species = "",
-          dbh = 0,
-          hauteur = 0,
+          dbhFinal = 0,
+          hauteurFinal = 0,
+          dbhRetro = 0,
+          hauteurRetro = 0,
           hcb = 0,
           span = 0,
           goodCarrots = FALSE,
@@ -3519,6 +3526,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   index_line = 1
   nIter = length(dGMAP_horsprod$treeGlobalId)
   pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=") 
+  cat("Create tree year table")
   
   # for all line of dGMAP_horsprod
   for(i in 1:nIter){ # loop on trees
@@ -3526,11 +3534,14 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
     treeGlobalId = dGMAP_horsprod_tree$treeGlobalId
     
     code_site = dGMAP_horsprod_tree$code_site
+    site = getSiteFromCodeSite(code_site)
     species = dGMAP_horsprod_tree$essence
-    dbh = dGMAP_horsprod_tree$circonference / pi # in cm
-    hauteur = dGMAP_horsprod_tree$htot
+    dbhFinal = dGMAP_horsprod_tree$circonference / pi # in cm
+    hauteurFinal = dGMAP_horsprod_tree$htot
     hcb = dGMAP_horsprod_tree$h_base_houppier
     span = dGMAP_horsprod_tree$htot - dGMAP_horsprod_tree$h_base_houppier
+    
+    
     
     # has the tree been carroted ?
     goodCarrots = FALSE
@@ -3545,24 +3556,28 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
       
       BAI_mes = -999
       WVI_mes = -999 # wood volume increment in m3
+      WVIc_mes = -999 # corrected wood volume increment in cm3
       
       if(goodCarrots){
         colName = paste0("X", year)
         BAI_mes = dGMAP_dendro_tree[[colName]]
-        WVI_mes = BAI_mes * 0.01**2 * hauteur # BAI from cm2 to m2
       }
       
       treeYearTableGMAP[index_line, 1] = treeGlobalId
       treeYearTableGMAP[index_line, 2] = code_site
-      treeYearTableGMAP[index_line, 3] = year
-      treeYearTableGMAP[index_line, 4] = BAI_mes
-      treeYearTableGMAP[index_line, 5] = WVI_mes
-      treeYearTableGMAP[index_line, 6] = species
-      treeYearTableGMAP[index_line, 7] = dbh
-      treeYearTableGMAP[index_line, 8] = hauteur
-      treeYearTableGMAP[index_line, 9] = hcb
-      treeYearTableGMAP[index_line, 10] = span
-      treeYearTableGMAP[index_line, 11] = goodCarrots
+      treeYearTableGMAP[index_line, 3] = site
+      treeYearTableGMAP[index_line, 4] = year
+      treeYearTableGMAP[index_line, 5] = BAI_mes
+      treeYearTableGMAP[index_line, 6] = WVI_mes
+      treeYearTableGMAP[index_line, 7] = WVIc_mes
+      treeYearTableGMAP[index_line, 8] = species
+      treeYearTableGMAP[index_line, 9] = dbhFinal
+      treeYearTableGMAP[index_line, 10] = hauteurFinal
+      treeYearTableGMAP[index_line, 11] = 0
+      treeYearTableGMAP[index_line, 12] = 0
+      treeYearTableGMAP[index_line, 13] = hcb
+      treeYearTableGMAP[index_line, 14] = span
+      treeYearTableGMAP[index_line, 15] = goodCarrots
       index_line = index_line + 1
       
       
@@ -3571,26 +3586,55 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   } # end loop on trees
   close(pb)
   
-  return(treeYearTableGMAP)
-}
-
-
-
-# EXTRAPOLATE measured BAI of NON-MEASURED TREES
-# For all groups of same year, stand and species, estimate mean(BAI/BA), then compute mean(BAI/BA) * BA for trees without BAI measure
-extrapoleMissingMeasuredBAI = function(treeYearTableGMAP){
-  treeYearTableGMAP$basalArea = pi * (treeYearTableGMAP$dbh/2)**2 # in cm2
+  
+  
+  # 2024.04.09 finally, not necessary
+  # # Estimate passed dbh of non-cored trees
+  # # BAI_BA_ratio, which is BAI (year) over BA (2013) for a given site and species and year combination
+  # treeYearTableGMAP_unique = unique(treeYearTableGMAP[, c("site","species", "year")])
+  # growthRatioTable = treeYearTableGMAP_unique
+  # growthRatioTable$BAI_BA_ratio = 0
+  # 
+  # for(index in 1:dim(growthRatioTable)[1]){
+  #   a_site = growthRatioTable[index,]$site
+  #   a_species = growthRatioTable[index,]$species
+  #   a_year = growthRatioTable[index,]$year
+  #   treeYearTableGMAP_subset = subset(treeYearTableGMAP, site == a_site & species == a_species & year == a_year & goodCarrots)
+  #   BAIyear = pi * (treeYearTableGMAP_subset$dbhRetro/2)**2
+  #   BAIfinal = pi * (treeYearTableGMAP_subset$dbhFinal/2)**2
+  #   BAI_BA_ratio = mean(BAIyear/BAIfinal) # (negative growth ratio)
+  #   
+  #   growthRatioTable[growthRatioTable$year == a_year &
+  #                      growthRatioTable$species == a_species & 
+  #                      growthRatioTable$site == a_site, ]$BAI_BA_ratio = BAI_BA_ratio
+  #   
+  #   selection = treeYearTableGMAP$year == a_year &
+  #     treeYearTableGMAP$species == a_species & 
+  #     treeYearTableGMAP$site == a_site & 
+  #     !treeYearTableGMAP$goodCarrots
+  #   treeYearTableGMAP_selection_BAIfinal = pi * (treeYearTableGMAP[selection, ]$dbhFinal/2)**2
+  #   treeYearTableGMAP_selection_BAIretro = treeYearTableGMAP_selection_BAIfinal * BAI_BA_ratio
+  #   treeYearTableGMAP_selection_dbhRetro = 2 * sqrt(treeYearTableGMAP_selection_BAIretro / pi)
+  #   treeYearTableGMAP[selection, ]$dbhRetro = treeYearTableGMAP_selection_dbhRetro
+  # }
+  
+  
+  
+  cat("Extrapolate BAI for non-cored trees")
+  
+  # For all years, stand and species, estimate mean(BAI/BA) of cored trees, then compute mean(BAI/BA) * BA for trees without BAI measure
+  treeYearTableGMAP$basalAreaFinal = pi * (treeYearTableGMAP$dbhFinal/2)**2 # in cm2
   
   code_site_list = unique(treeYearTableGMAP$code_site)
   nIter = length(code_site_list)
   pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=")
   
-  # for all stand
+  # for all stands
   for(i in 1:nIter){
     a_code_site = code_site_list[i]
     treeYearTable_stand = subset(treeYearTableGMAP, code_site == a_code_site)
     
-    # for all year
+    # for all years
     for(ayear in unique(treeYearTable_stand$year)){
       treeYearTable_stand_year = subset(treeYearTable_stand, year == ayear)
       
@@ -3599,24 +3643,96 @@ extrapoleMissingMeasuredBAI = function(treeYearTableGMAP){
         treeYearTable_stand_year_species = subset(treeYearTable_stand_year, species == aSpecies)
         treeYearTable_stand_year_species_measured = subset(treeYearTable_stand_year, species == aSpecies & goodCarrots == TRUE)
         
-        # si aucun individu de l'espece n'est present, on utilise le rapport BAI/BA des individus du peuplement cette anéne
+        # si aucun individu de l'espece n'est present, on utilise le rapport BAI/BA des individus carrotés de même espèce, code_site et années
         if(dim(treeYearTable_stand_year_species_measured)[1] == 0){
-          treeYearTable_stand_year_species_measured = subset(treeYearTable_stand_year, goodCarrots == TRUE)
+          aSite = getCodeSiteFromSimulationName(a_code_site)
+          # treeYearTable_stand_year_species_measured = subset(treeYearTable_stand_year, goodCarrots == TRUE)
+          treeYearTable_stand_year_species_measured = subset(treeYearTableGMAP, size == aSite & species == aSpecies & year == ayear & goodCarrots == TRUE)
         }
         
-        meanBAIonBA = mean(treeYearTable_stand_year_species_measured$BAI_mes / treeYearTable_stand_year_species_measured$basalArea)
+        meanBAIonBA = mean(treeYearTable_stand_year_species_measured$BAI_mes / treeYearTable_stand_year_species_measured$basalAreaFinal)
         
         selection = treeYearTableGMAP$code_site == a_code_site & treeYearTableGMAP$year == ayear & treeYearTableGMAP$species == aSpecies & treeYearTableGMAP$goodCarrots == FALSE
-        treeYearTableGMAP[selection, ]$BAI_mes = treeYearTableGMAP[selection, ]$basalArea * meanBAIonBA
-        treeYearTableGMAP[selection, ]$WVI_mes = treeYearTableGMAP[selection, ]$BAI_mes * 0.01**2 * treeYearTableGMAP[selection, ]$hauteur # BAI from cm2 to m2
+        treeYearTableGMAP[selection, ]$BAI_mes = treeYearTableGMAP[selection, ]$basalAreaFinal * meanBAIonBA
       }
     }
     setTxtProgressBar(pb, i) # change progress bar
   }
   close(pb)
-  rm(treeYearTable_stand, treeYearTable_stand_year, treeYearTable_stand_year_species, treeYearTable_stand_year_species_measured)
+  
+  
+  
+  cat("Computed passed dbh based on measured BAI")
+  
+  treeIds = unique(treeYearTableGMAP$treeGlobalId)
+  nIter = length(treeIds)
+  pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=")
+  
+  for(i in 1:nIter){
+    treeId = treeIds[i]
+    treeSet = subset(treeYearTableGMAP, treeGlobalId == treeId)
+    treeDbhFinal = unique(treeSet$dbhFinal)
+    basalArea = pi * (treeDbhFinal/2)**2 # cm2
+    
+    # for the year 2013, dbhRetro = dbhFinal
+    treeYearTableGMAP[treeYearTableGMAP$treeGlobalId == treeId & treeYearTableGMAP$year == max(yearsLoop), ]$dbhRetro = treeDbhFinal
+    
+    # loop on reverse years
+    for(a_year in rev(yearsLoop)-1){
+      BAItreeyear = treeSet[treeSet$year == (a_year+1), ]$BAI_mes # eg, growth on 2013 to have the 2012 dbh
+      basalArea = basalArea - BAItreeyear # in cm2
+      dbhRetro = sqrt(basalArea / pi) * 2 # in cm
+      treeYearTableGMAP[treeYearTableGMAP$treeGlobalId == treeId & treeYearTableGMAP$year == a_year, ]$dbhRetro = dbhRetro
+    }
+    
+    setTxtProgressBar(pb, i) # change progress bar
+  } # end loop on trees
+  close(pb)
+  
+  treeYearTableGMAP$dbhRetro[treeYearTableGMAP$dbhRetro < 5] = 5
+  
+  
+  # Computed passed height
+  lm_table = tibble(essence = "", site = "", intercept = 0, slope = 0, 
+                    .rows = length(unique(dGMAP_horsprod$essence)) * length(unique(dGMAP_horsprod$site)))
+  i = 1
+  
+  treeYearTableGMAPLastYear = subset(treeYearTableGMAP, year == max(treeYearTableGMAP$year))
+  for(a_species in unique(treeYearTableGMAPLastYear$species)){
+    for(a_site in unique(treeYearTableGMAPLastYear$site)){
+      lm1 = lm(data = treeYearTableGMAPLastYear, 
+               subset = species == a_species & site == a_site,
+               formula = log(hauteurFinal) ~ log(dbhFinal))
+      intercept = lm1$coefficients["(Intercept)"]
+      slope = lm1$coefficients["log(dbhFinal)"]
+      
+      lm_table[i, ]$essence = a_species
+      lm_table[i, ]$site = a_site
+      lm_table[i, ]$intercept = intercept
+      lm_table[i, ]$slope = slope
+      
+      selection = treeYearTableGMAP$species == a_species & getSiteFromCodeSite(treeYearTableGMAP$code_site) == a_site
+      logDbhDelta =  log(treeYearTableGMAP$dbhRetro[selection]) - log(treeYearTableGMAP$dbhFinal[selection])
+      treeYearTableGMAP$hauteurRetro[selection] = exp( log(treeYearTableGMAP$hauteurFinal[selection]) + logDbhDelta * slope )
+    }
+  }
+  
+ 
+  
+  
+  
+  # COMPUTE WVI (basic cylinder with final height)
+  treeYearTableGMAP$WVI_mes = treeYearTableGMAP$BAI_mes * 0.01**2 * treeYearTableGMAP$hauteurFinal # BAI from cm2 to m2
+  
+  # COMPUTE WVI (cropped cylinder with retrospective height)
+  volumeIncrementCylinder = treeYearTableGMAP$BAI_mes * (treeYearTableGMAP$hauteurRetro * 100) # in cm3
+  phi = ifelse(treeYearTableGMAP$species == "hetre", 0.515, 0.52) # Form coefficient of stem from Castanea species file, (hetre or sapin), from Deleuze et al 2014 https://hal.science/hal-01143797
+  treeYearTableGMAP$WVIc_mes = volumeIncrementCylinder * phi # Corrected trunk volume, in cm3
+  
+  
   return(treeYearTableGMAP)
 }
+
 
 
 
@@ -3641,7 +3757,9 @@ makeStandYearTable = function(treeYearTable){
                            BAI_sim = 0,
                            BAI_mes = 0,
                            WVI_sim = 0,
+                           WVIo_sim = 0, # original simulated wood increment, in cm3
                            WVI_mes = 0,
+                           WVIc_mes = 0, # corrected WVI, in cm3
                            .rows = nStandYearTot)
   
   index_line = 1
@@ -3667,7 +3785,9 @@ makeStandYearTable = function(treeYearTable){
       standYearTable[index_line, 9] = sum(treeYearTable_codesite_year$BAI_sim)
       standYearTable[index_line, 10] = sum(treeYearTable_codesite_year$BAI_mes)
       standYearTable[index_line, 11] = sum(treeYearTable_codesite_year$WVI_sim)
-      standYearTable[index_line, 12] = sum(treeYearTable_codesite_year$WVI_mes)
+      standYearTable[index_line, 12] = sum(treeYearTable_codesite_year$WVIo_sim)
+      standYearTable[index_line, 13] = sum(treeYearTable_codesite_year$WVI_mes)
+      standYearTable[index_line, 14] = sum(treeYearTable_codesite_year$WVIc_mes)
       index_line = index_line + 1
       
       setTxtProgressBar(pb, index_line) # change progress bar
@@ -3704,12 +3824,14 @@ makeStandYearTableFromStandScale = function(standSimulist, standYearTable_GMAP){
                             RautoAbs_sim = 0, # gC/yr
                             BAI_sim = 0,# BAI from mm2 to cm2
                             WVI_sim = 0, # WVI in unit as in yearlyResults (normally, m3)
+                            WVIo_sim = 0, # original WVI in cm3
                             REWmin = 0, # %
                             RU_level_min = 0,
                             RU_shortage_max = 0,
                             transpiration = 0,
                             BAI_mes = 0,
-                            WVI_mes = 0,
+                           WVI_mes = 0,
+                           WVIc_mes = 0, # corrected with form factor, in cm3
                            .rows = nStandYearTot)
   index_line = 1
   
@@ -3756,13 +3878,15 @@ makeStandYearTableFromStandScale = function(standSimulist, standYearTable_GMAP){
       standYearTable[index_line, 12] = codesiteOneYearResults$Rauto * standArea_m2
       standYearTable[index_line, 13] = codesiteOneYearResults$BAI * nTreePerStand * 1e-2 # BAI from mm2 to cm2
       standYearTable[index_line, 14] = codesiteOneYearResults$WVI * nTreePerStand
-      standYearTable[index_line, 15] = codesiteOneYearResults$REWmin
-      standYearTable[index_line, 16] = codesiteOneYearResults$RU_level_min
-      standYearTable[index_line, 17] = codesiteOneYearResults$RU_shortage_max
-      standYearTable[index_line, 18] = codesiteOneYearResults$TR
+      standYearTable[index_line, 15] = codesiteOneYearResults$WVI_real * nTreePerStand
+      standYearTable[index_line, 16] = codesiteOneYearResults$REWmin
+      standYearTable[index_line, 17] = codesiteOneYearResults$RU_level_min
+      standYearTable[index_line, 18] = codesiteOneYearResults$RU_shortage_max
+      standYearTable[index_line, 19] = codesiteOneYearResults$TR
       
-      standYearTable[index_line, 19] = codesiteOneYearTable_GMAP$BAI_mes
-      standYearTable[index_line, 20] = codesiteOneYearTable_GMAP$WVI_mes
+      standYearTable[index_line, 20] = codesiteOneYearTable_GMAP$BAI_mes
+      standYearTable[index_line, 21] = codesiteOneYearTable_GMAP$WVI_mes
+      standYearTable[index_line, 22] = codesiteOneYearTable_GMAP$WVIc_mes
       
       
       index_line = index_line + 1
@@ -3830,98 +3954,98 @@ makeStandYearTableFromStandScale_universal = function(standSimulist, yvarList){
 
 
 
-
-# Create a table with stand-year entries and simulated BAI from CASTANEA as column
-# For multispecific simulations, BAI is the aggregate of two CASTANEA monospecifics simulations
-makeCASTANEAstandYearTable = function(simulationList, simulationList_preli){
-  standYearCASTANEATable = NULL
-  
-  # for all stand
-  nIter = length(names(simulationList_preli))
-  pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=") 
-  for(i in 1:nIter){ # i = 1
-    nameSimuPreli = names(simulationList_preli)[i]
-    
-    nameSimuPreliSplit = strsplit(nameSimuPreli, "_")[[1]]
-    
-    # information about simulation stand
-    simulationSetPreli = paste0(nameSimuPreliSplit[1:2], collapse = "_")
-    simulationSet = paste0(nameSimuPreliSplit[2], collapse = "_")
-    
-    nameSimu = paste0(nameSimuPreliSplit[2:length(nameSimuPreliSplit)], collapse = "_")
-    code_site = paste0(nameSimuPreliSplit[-c(1,2)], collapse = "_")
-    site = nameSimuPreliSplit[3]
-    composition = nameSimuPreliSplit[5]
-    triplet = paste(nameSimuPreliSplit[3], nameSimuPreliSplit[4], nameSimuPreliSplit[6], sep = "_")
-    
-    standArea_m2 = simulationList_preli[[i]]$inventory$standArea_m2
-    
-    yearlyResultsSimu = simulationList[[nameSimu]]$yearlyResults
-    yearlyResultsSimuPreli = simulationList_preli[[nameSimuPreli]]$yearlyResults
-    
-    speciesList = unique(yearlyResultsSimu$species)
-    if( TRUE %in% (unique(sort(yearlyResultsSimu$species)) != unique(sort(yearlyResultsSimuPreli$species))) ){
-      stop("Not the same species in preliminary and simulation")
-    }
-    
-    if( TRUE %in% (unique(sort(yearlyResultsSimu$year)) != unique(sort(yearlyResultsSimuPreli$year))) ){
-      stop("Not the same years in preliminary and simulation")
-    }
-    
-    # for all years
-    for(ayear in unique(yearlyResultsSimuPreli$year)){
-      yearlyResultsSimuPreliYear = subset(yearlyResultsSimuPreli, year == ayear)
-      yearlyResultsSimuYear = subset(yearlyResultsSimu, year == ayear)
-      
-      GPP_aggregated = 0
-      BAI_aggregated = 0
-      BAI_aggregated2 = 0
-      sumTreesBasalArea = sum(pi * (yearlyResultsSimuYear$dbh/2)**2) 
-      
-      for(aSpeciesId in yearlyResultsSimuPreliYear$species){
-        yearlyResultsSimuYearSpecies = subset(yearlyResultsSimuYear, species == aSpeciesId)
-        ratioSpecies = sum(pi * (yearlyResultsSimuYearSpecies$dbh/2)**2) / sumTreesBasalArea 
-        
-        yearlyResultsSimuPreliYearSpecies = subset(yearlyResultsSimuPreliYear, species == aSpeciesId)
-        GPP_aggregated = GPP_aggregated + yearlyResultsSimuPreliYearSpecies$GPP * ratioSpecies
-        
-        # nTreeSpecies_Plot est le nombre d'arbre de l'espèce considéré comptés sur la placette (meilleure methode)
-        # nTreeSpecies_est est le nombre d'arbre de l'espèce considéré recalculé à partir du Nha de la simu preli et du ratio species
-        nTreeSpecies_Plot = length(unique(yearlyResultsSimuYearSpecies$idFmCell))
-        species_stand_area_m2 = standArea_m2 * ratioSpecies
-        nTreeSpecies_est = yearlyResultsSimuPreliYearSpecies$Nha / 10000 * species_stand_area_m2
-        
-        BAI_aggregated = BAI_aggregated + yearlyResultsSimuPreliYearSpecies$BAI * nTreeSpecies_Plot
-        BAI_aggregated2 = BAI_aggregated2 + yearlyResultsSimuPreliYearSpecies$BAI * nTreeSpecies_est
-      }
-      
-      
-      table_line = tibble( code_site = code_site,
-                           year = ayear,
-                           GPPabs_simCAST = GPP_aggregated * standArea_m2,
-                           BAI_simCAST = BAI_aggregated * 1e-2,
-                           BAI_simCAST2 = BAI_aggregated2 * 1e-2 ) # BAI from mm2 to cm2
-      
-      if(is.null(standYearCASTANEATable)){
-        standYearCASTANEATable = table_line
-      }else{
-        standYearCASTANEATable = rbind(standYearCASTANEATable, table_line)
-      }
-      
-    }
-    setTxtProgressBar(pb, i) # change progress bar
-  }
-  rm(yearlyResultsSimu, nameSimu, nameSimuPreli, yearlyResultsSimuPreli, yearlyResultsSimuPreliYear, yearlyResultsSimuPreliYearSpecies, 
-     yearlyResultsSimuYear, yearlyResultsSimuYearSpecies, table_line, GPP_aggregated, BAI_aggregated, BAI_aggregated2, 
-     nTreeSpecies_est, nTreeSpecies_Plot, ratioSpecies)
-  close(pb)
-  
-  # NULL BAI
-  # standYearCASTANEATable = standYearCASTANEATable[ standYearCASTANEATable$code_site != "bg_haut_ph_1a", ]
-  
-  return(standYearCASTANEATable)
-  
-}
+# OLD, to clean
+# # Create a table with stand-year entries and simulated BAI from CASTANEA as column
+# # For multispecific simulations, BAI is the aggregate of two CASTANEA monospecifics simulations
+# makeCASTANEAstandYearTable = function(simulationList, simulationList_preli){
+#   standYearCASTANEATable = NULL
+#   
+#   # for all stand
+#   nIter = length(names(simulationList_preli))
+#   pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=") 
+#   for(i in 1:nIter){ # i = 1
+#     nameSimuPreli = names(simulationList_preli)[i]
+#     
+#     nameSimuPreliSplit = strsplit(nameSimuPreli, "_")[[1]]
+#     
+#     # information about simulation stand
+#     simulationSetPreli = paste0(nameSimuPreliSplit[1:2], collapse = "_")
+#     simulationSet = paste0(nameSimuPreliSplit[2], collapse = "_")
+#     
+#     nameSimu = paste0(nameSimuPreliSplit[2:length(nameSimuPreliSplit)], collapse = "_")
+#     code_site = paste0(nameSimuPreliSplit[-c(1,2)], collapse = "_")
+#     site = nameSimuPreliSplit[3]
+#     composition = nameSimuPreliSplit[5]
+#     triplet = paste(nameSimuPreliSplit[3], nameSimuPreliSplit[4], nameSimuPreliSplit[6], sep = "_")
+#     
+#     standArea_m2 = simulationList_preli[[i]]$inventory$standArea_m2
+#     
+#     yearlyResultsSimu = simulationList[[nameSimu]]$yearlyResults
+#     yearlyResultsSimuPreli = simulationList_preli[[nameSimuPreli]]$yearlyResults
+#     
+#     speciesList = unique(yearlyResultsSimu$species)
+#     if( TRUE %in% (unique(sort(yearlyResultsSimu$species)) != unique(sort(yearlyResultsSimuPreli$species))) ){
+#       stop("Not the same species in preliminary and simulation")
+#     }
+#     
+#     if( TRUE %in% (unique(sort(yearlyResultsSimu$year)) != unique(sort(yearlyResultsSimuPreli$year))) ){
+#       stop("Not the same years in preliminary and simulation")
+#     }
+#     
+#     # for all years
+#     for(ayear in unique(yearlyResultsSimuPreli$year)){
+#       yearlyResultsSimuPreliYear = subset(yearlyResultsSimuPreli, year == ayear)
+#       yearlyResultsSimuYear = subset(yearlyResultsSimu, year == ayear)
+#       
+#       GPP_aggregated = 0
+#       BAI_aggregated = 0
+#       BAI_aggregated2 = 0
+#       sumTreesBasalArea = sum(pi * (yearlyResultsSimuYear$dbh/2)**2) 
+#       
+#       for(aSpeciesId in yearlyResultsSimuPreliYear$species){
+#         yearlyResultsSimuYearSpecies = subset(yearlyResultsSimuYear, species == aSpeciesId)
+#         ratioSpecies = sum(pi * (yearlyResultsSimuYearSpecies$dbh/2)**2) / sumTreesBasalArea 
+#         
+#         yearlyResultsSimuPreliYearSpecies = subset(yearlyResultsSimuPreliYear, species == aSpeciesId)
+#         GPP_aggregated = GPP_aggregated + yearlyResultsSimuPreliYearSpecies$GPP * ratioSpecies
+#         
+#         # nTreeSpecies_Plot est le nombre d'arbre de l'espèce considéré comptés sur la placette (meilleure methode)
+#         # nTreeSpecies_est est le nombre d'arbre de l'espèce considéré recalculé à partir du Nha de la simu preli et du ratio species
+#         nTreeSpecies_Plot = length(unique(yearlyResultsSimuYearSpecies$idFmCell))
+#         species_stand_area_m2 = standArea_m2 * ratioSpecies
+#         nTreeSpecies_est = yearlyResultsSimuPreliYearSpecies$Nha / 10000 * species_stand_area_m2
+#         
+#         BAI_aggregated = BAI_aggregated + yearlyResultsSimuPreliYearSpecies$BAI * nTreeSpecies_Plot
+#         BAI_aggregated2 = BAI_aggregated2 + yearlyResultsSimuPreliYearSpecies$BAI * nTreeSpecies_est
+#       }
+#       
+#       
+#       table_line = tibble( code_site = code_site,
+#                            year = ayear,
+#                            GPPabs_simCAST = GPP_aggregated * standArea_m2,
+#                            BAI_simCAST = BAI_aggregated * 1e-2,
+#                            BAI_simCAST2 = BAI_aggregated2 * 1e-2 ) # BAI from mm2 to cm2
+#       
+#       if(is.null(standYearCASTANEATable)){
+#         standYearCASTANEATable = table_line
+#       }else{
+#         standYearCASTANEATable = rbind(standYearCASTANEATable, table_line)
+#       }
+#       
+#     }
+#     setTxtProgressBar(pb, i) # change progress bar
+#   }
+#   rm(yearlyResultsSimu, nameSimu, nameSimuPreli, yearlyResultsSimuPreli, yearlyResultsSimuPreliYear, yearlyResultsSimuPreliYearSpecies, 
+#      yearlyResultsSimuYear, yearlyResultsSimuYearSpecies, table_line, GPP_aggregated, BAI_aggregated, BAI_aggregated2, 
+#      nTreeSpecies_est, nTreeSpecies_Plot, ratioSpecies)
+#   close(pb)
+#   
+#   # NULL BAI
+#   # standYearCASTANEATable = standYearCASTANEATable[ standYearCASTANEATable$code_site != "bg_haut_ph_1a", ]
+#   
+#   return(standYearCASTANEATable)
+#   
+# }
 
 
 
@@ -3953,7 +4077,9 @@ makeTreePeriodTable = function(treeYearTable, periodList){
                             BAIy_sim = 0,
                             BAIy_mes = 0,
                             WVIy_sim = 0,
+                            WVIoy_sim = 0, # original WVI, in cm3
                             WVIy_mes = 0,
+                            WVIcy_mes = 0, # corrected, in cm3
                             species = "",
                             dbh = 0,
                             hauteur = 0,
@@ -3988,12 +4114,14 @@ makeTreePeriodTable = function(treeYearTable, periodList){
       treePeriodTable[index_line, 11] = sum(treeYearTable_tree_periodSubset$BAI_sim) / nYearsPeriod
       treePeriodTable[index_line, 12] = sum(treeYearTable_tree_periodSubset$BAI_mes) / nYearsPeriod
       treePeriodTable[index_line, 13] = sum(treeYearTable_tree_periodSubset$WVI_sim) / nYearsPeriod
-      treePeriodTable[index_line, 14] = sum(treeYearTable_tree_periodSubset$WVI_mes) / nYearsPeriod
-      treePeriodTable[index_line, 15] = unique(treeYearTable_tree$species)
-      treePeriodTable[index_line, 16] = unique(treeYearTable_tree$dbh)
-      treePeriodTable[index_line, 17] = unique(treeYearTable_tree$hauteur)
-      treePeriodTable[index_line, 18] = unique(treeYearTable_tree$hcb)
-      treePeriodTable[index_line, 19] = unique(treeYearTable_tree$span)
+      treePeriodTable[index_line, 14] = sum(treeYearTable_tree_periodSubset$WVIo_sim) / nYearsPeriod
+      treePeriodTable[index_line, 15] = sum(treeYearTable_tree_periodSubset$WVI_mes) / nYearsPeriod
+      treePeriodTable[index_line, 16] = sum(treeYearTable_tree_periodSubset$WVIc_mes) / nYearsPeriod
+      treePeriodTable[index_line, 17] = unique(treeYearTable_tree$species)
+      treePeriodTable[index_line, 18] = unique(treeYearTable_tree$dbh)
+      treePeriodTable[index_line, 19] = unique(treeYearTable_tree$hauteur)
+      treePeriodTable[index_line, 20] = unique(treeYearTable_tree$hcb)
+      treePeriodTable[index_line, 21] = unique(treeYearTable_tree$span)
       
       index_line = index_line + 1
       
@@ -4048,7 +4176,9 @@ makeStandPeriodTable = function(standYearTable, periodList){
                            BAIy_sim = sum(standYearTable_stand_subset$BAI_sim) / nYearsPeriod,
                            BAIy_mes = sum(standYearTable_stand_subset$BAI_mes) / nYearsPeriod,
                            WVIy_sim = sum(standYearTable_stand_subset$WVI_sim) / nYearsPeriod,
+                           WVIoy_sim = sum(standYearTable_stand_subset$WVIo_sim) / nYearsPeriod, # original simulated WVI, in cm3
                            WVIy_mes = sum(standYearTable_stand_subset$WVI_mes) / nYearsPeriod,
+                           WVIcy_mes = sum(standYearTable_stand_subset$WVIc_mes) / nYearsPeriod, # correct measured WVI in cm3
                            REWmin = sum(standYearTable_stand_subset$REWmin) / nYearsPeriod,
                            RU_level_min = sum(standYearTable_stand_subset$RU_level_min) / nYearsPeriod,
                            transpiration = sum(standYearTable_stand_subset$transpiration) / nYearsPeriod,

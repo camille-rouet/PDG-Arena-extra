@@ -629,7 +629,7 @@ for(code_site in all_code_site){
         max2010GrowthLine = which.max(dataTree_dendro[["X2010"]])
         dataTree_dendro1 = dataTree_dendro[max2010GrowthLine,]
         
-        BAI = sum(dataTree_dendro1[, coreIndexes])
+        BAI = sum(dataTree_dendro1[, coreIndexes]) # cr-2024.04.26 should total BAI ignore the 2013 year, or the 1996 year ?
         dbhInitYear = sqrt(dbh2013 ** 2 - BAI * 4 / pi) # calcul de dbh init en cm a partir de dbh 2013 et du BAI en cm2 
         
         
