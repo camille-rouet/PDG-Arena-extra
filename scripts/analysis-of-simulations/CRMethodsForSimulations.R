@@ -3549,7 +3549,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   index_line = 1
   nIter = length(dGMAP_horsprod$treeGlobalId)
   pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=") 
-  cat("Create tree year table")
+  cat("\nCreate tree year table")
   
   # for all line of dGMAP_horsprod
   for(i in 1:nIter){ # loop on trees
@@ -3647,7 +3647,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   
   
   
-  cat("Extrapolate BAI for non-cored trees")
+  cat("\nExtrapolate BAI for non-cored trees")
   
   # For all years, stand and species, estimate mean(BAI/BA) of cored trees, then compute mean(BAI/BA) * BA for trees without BAI measure
   treeYearTableGMAP$basalAreaFinal = pi * (treeYearTableGMAP$dbhFinal/2)**2 # in cm2
@@ -3690,7 +3690,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   
   
   
-  cat("Computed passed dbh based on measured BAI")
+  cat("\nComputed passed dbh based on measured BAI")
   
   treeIds = unique(treeYearTableGMAP$treeGlobalId)
   nIter = length(treeIds)

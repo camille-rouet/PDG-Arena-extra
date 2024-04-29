@@ -62,14 +62,14 @@ dGMAP_horsprod = subset(dGMAP_horsprod, site %in% c("vtx", "bg", "vl"))
 
 
 # GMAP table with all trees (ie even those who were not simulated, ie tree that were dead, from an other species than beech and fir, or from stand that were not simulated)
-treeYearTable_GMAP_all = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod)
+# treeYearTable_GMAP_all = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod)
 
 
 
 # IMPORT SIMULATIONS
 fmOutput = 1 # similar to fmSettings.output
 logList = logListList[[fmOutput]]
-import_irreg_demo_monosp = FALSE
+import_irreg_demo_monosp = FALSE # import E1B mode ?
 import_CAST = TRUE
 keepFilter = ""
 
@@ -402,7 +402,7 @@ treeid_simulated = getSimulatedTreeIds(simuListIrregdemoPlurisp)
 treeid_measured = unique(dGMAP_dendro$treeGlobalId)
 treeid_simulated_notmeasured = treeid_simulated[!treeid_simulated %in% treeid_measured]
 treeid_measured_notsimulated = treeid_measured[!treeid_measured %in% treeid_simulated]
-warning(paste0("These trees were measured but not simulated:\n", paste0(treeid_measured_notsimulated, collapse = "\n")))
+warning(paste0("These trees were measured but not simulated in irregdemo plurisp:\n", paste0(treeid_measured_notsimulated, collapse = "\n")))
 dGMAP_horsprod_simulatedTrees = subset(dGMAP_horsprod, treeGlobalId %in% treeid_simulated)
 
 # tree year
@@ -422,6 +422,8 @@ for(a_code_site in unique(standYearTable_GMAP$code_site)){
 # GMAP tree-period and stand-period
 treePeriodTable_GMAP = makeTreePeriodTable(treeYearTable = treeYearTable_GMAP, periodList)
 standPeriodTable_GMAP = makeStandPeriodTable(standYearTable_GMAP, periodList) # warnings because physiological variables are imported in makeStandYearTableFromStandScale only
+
+
 
 
 # E2 individuals
@@ -448,7 +450,7 @@ if(import_irreg_demo_monosp){
   treeid_simulated_notmeasured = treeid_simulated[!treeid_simulated %in% treeid_measured]
   treeid_measured_notsimulated = treeid_measured[!treeid_measured %in% treeid_simulated]
   
-  warning(paste0("These trees were measured but not simulated:\n", paste0(treeid_measured_notsimulated, collapse = "\n")))
+  warning(paste0("These trees were measured but not simulated in irregdemo monosp:\n", paste0(treeid_measured_notsimulated, collapse = "\n")))
   
   treeYearTable_E1B = left_join(treeYearTable_E1B, treeYearTable_GMAP)
   
@@ -505,6 +507,8 @@ removeUnits = function(a_standPeriodTable){
   return(a_standPeriodTable)
 }
 
+
+
 # add some columns for a table
 addNewColumns = function(a_standPeriodTable, simuList_st){
   a_standPeriodTable$code_triplet_cut = sapply(a_standPeriodTable$triplet, FUN = function(x){splitted = strsplit(x, split = "_")[[1]] ; return(paste0(splitted[-1], collapse =  "."))})
@@ -540,6 +544,11 @@ addNewColumns = function(a_standPeriodTable, simuList_st){
   }
   
   # set units
+  for(col in c("WVIoy_sim", "WVIcy_mes")){
+    a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm3/yr)
+  }
+  
+  # set units
   for(col in c("GPPy_abs_sim", "NPPy_abs_sim", "Rautoy_abs_sim")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], g/yr)
   }
@@ -549,8 +558,11 @@ addNewColumns = function(a_standPeriodTable, simuList_st){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], m2)
   }
   
+  # NEW VARIABLES
   a_standPeriodTable$WVIy_m2_mes = a_standPeriodTable$WVIy_mes / a_standPeriodTable$standArea_m2
   a_standPeriodTable$WVIy_m2_sim = a_standPeriodTable$WVIy_sim / a_standPeriodTable$standArea_m2
+  a_standPeriodTable$WVIcy_m2_mes = a_standPeriodTable$WVIcy_mes / a_standPeriodTable$standArea_m2 # measured corrected
+  a_standPeriodTable$WVIoy_m2_sim = a_standPeriodTable$WVIoy_sim / a_standPeriodTable$standArea_m2 # simulated original
   a_standPeriodTable$GPPy_m2_sim = a_standPeriodTable$GPPy_abs_sim / a_standPeriodTable$standArea_m2
   a_standPeriodTable$NPPy_m2_sim = a_standPeriodTable$NPPy_abs_sim / a_standPeriodTable$standArea_m2
   a_standPeriodTable$BAIy_m2_mes = a_standPeriodTable$BAIy_mes / a_standPeriodTable$standArea_m2
@@ -568,6 +580,11 @@ addNewColumns = function(a_standPeriodTable, simuList_st){
   }
   
   # set new units
+  for(col in c("WVIcy_m2_mes", "WVIoy_m2_sim")){
+    a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm3/m2/yr)
+  }
+  
+  # set new units
   for(col in c("BAIy_m2_mes", "BAIy_m2_sim")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm2/m2/yr)
   }
@@ -575,15 +592,15 @@ addNewColumns = function(a_standPeriodTable, simuList_st){
   return(a_standPeriodTable)
 }
 
-# convert the unit for some colymn of a table
-changeUnit_TableList = function(a_standPeriodTable, simuList_st){
-  
-  for(col in c("GPPy_abs_sim", "NPPy_abs_sim", "Rautoy_abs_sim")){
-    a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], kg/yr)
-  }
-  
-  return(a_standPeriodTable)
-}
+# # convert the unit for some colymn of a table
+# changeUnit_TableList = function(a_standPeriodTable, simuList_st){
+#   
+#   for(col in c("GPPy_abs_sim", "NPPy_abs_sim", "Rautoy_abs_sim")){
+#     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], kg/yr)
+#   }
+#   
+#   return(a_standPeriodTable)
+# }
 
 
 # Add columns for stand-period table and add units
@@ -602,17 +619,18 @@ standPeriodTable_GMAP = addNewColumns(standPeriodTable_GMAP, simuListIrregdemoPl
 
 
 # CHANGE UNIT /!\ DO NOT RE-EXECUTE THESE LINES, this would change the values
-standPeriodTable_E2 = changeUnit_TableList(standPeriodTable_E2, simuListIrregdemoPlurisp_st)
-if(import_irreg_demo_monosp){
-  standPeriodTable_E1B = changeUnit_TableList(standPeriodTable_E1B, simuListIrregdemoPlurisp_st)
-  standYearTable_E1B_fromStand = changeUnit_TableList(standYearTable_E1B_fromStand, simuListIrregdemoPlurisp_st)
-}
-standPeriodTable_E1A = changeUnit_TableList(standPeriodTable_E1A, simuListIrregdemoPlurisp_st)
-standPeriodTable_E0 = changeUnit_TableList(standPeriodTable_E0, simuListIrregdemoPlurisp_st)
-if(import_CAST)
-  standPeriodTable_CAST = changeUnit_TableList(standPeriodTable_CAST, simuListIrregdemoPlurisp_st)
-standPeriodTable_E0PRELI = changeUnit_TableList(standPeriodTable_E0PRELI, simuListIrregdemoPlurisp_st)
-standPeriodTable_GMAP = changeUnit_TableList(standPeriodTable_GMAP, simuListIrregdemoPlurisp_st)
+# to clean
+# standPeriodTable_E2 = changeUnit_TableList(standPeriodTable_E2, simuListIrregdemoPlurisp_st)
+# if(import_irreg_demo_monosp){
+#   standPeriodTable_E1B = changeUnit_TableList(standPeriodTable_E1B, simuListIrregdemoPlurisp_st)
+#   standYearTable_E1B_fromStand = changeUnit_TableList(standYearTable_E1B_fromStand, simuListIrregdemoPlurisp_st)
+# }
+# standPeriodTable_E1A = changeUnit_TableList(standPeriodTable_E1A, simuListIrregdemoPlurisp_st)
+# standPeriodTable_E0 = changeUnit_TableList(standPeriodTable_E0, simuListIrregdemoPlurisp_st)
+# if(import_CAST)
+#   standPeriodTable_CAST = changeUnit_TableList(standPeriodTable_CAST, simuListIrregdemoPlurisp_st)
+# standPeriodTable_E0PRELI = changeUnit_TableList(standPeriodTable_E0PRELI, simuListIrregdemoPlurisp_st)
+# standPeriodTable_GMAP = changeUnit_TableList(standPeriodTable_GMAP, simuListIrregdemoPlurisp_st)
 
 
 
@@ -673,14 +691,25 @@ if(import_CAST){
 # GRAPH SHOWING ALL STANDS --------------------------------------------------------------------
 # (Appendix) Graph with all stands 
 
+# define variables and plot boundaries
+variableY = "WVIoy_m2_sim"
+variableX = "WVIcy_m2_mes"
+xValMin = 0 ; yValMin = 0  ; xValMax = 0 ; yValMax = 0
+for(a_standPeriodTable in standPeriodTable_list){
+  xValMax = max(xValMax, subset(a_standPeriodTable, period == "1996_2013")[[variableX]])
+  yValMax = max(yValMax, subset(a_standPeriodTable, period == "1996_2013")[[variableY]])
+}
+xValMax = max(xValMax, yValMax) * 1.06
+yValMax = max(xValMax, yValMax)
+coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
+
 size = 4
-xValMin = 0 ; xValMax = 4.5e-3 ; yValMin = 0 ; yValMax = 4.5e-3 ; coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
 folderPlot = paste0("plots/", currentSimulation, "divers/")
 for(i in 1:length(standPeriodTable_list)){
   a_standPeriodTable = standPeriodTable_list[[i]]
   a_title = title_list[[i]]
   ggplot(subset(a_standPeriodTable, period == "1996_2013"), 
-         aes(x = WVIy_m2_mes, y = WVIy_m2_sim, color = composition, label = code_site_cut, shape = factor(site))
+         aes_string(x = variableX, y = variableY, color = "composition", label = "code_site_cut", shape = "factor(site)")
   ) + 
     # a_title +
     # facet_grid( . ~ composition) +
@@ -696,7 +725,7 @@ for(i in 1:length(standPeriodTable_list)){
                        values = c(15,19,17)) +
     annotate("text", x=1.3125, y=1.375, label= "1:1", size = 6)
   
-  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVIm_m2", "_", a_title$title))
+  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI2", "_", a_title$title))
 }
 
 
@@ -741,8 +770,6 @@ for(i in 1:length(standPeriodTable_list)){
 
 # 3.1 CORRELATION MATRIX -----------------------------------------------------------
 # (Part 3.1) Correlations between modelling situations
-
-
 listOfTables = list(subset(standPeriodTable_CAST, period == "1996_2013"),
                     subset(standPeriodTable_E0, period == "1996_2013"),
                     subset(standPeriodTable_E1A, period == "1996_2013"),
@@ -919,8 +946,8 @@ saveLastGgPlot(folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
 # (Part 3.2) Correlation and error coefficients on simulated versus measured variables
 
 # Defines the variables of interest and coefficient to comptute
-var2 = "WVIy_m2_sim"
-var1 = "WVIy_m2_mes"
+var2 = "WVIoy_m2_sim"
+var1 = "WVIcy_m2_mes"
 coefficients_list = c("r2", "MAPE")
 # all coefficients : "correlation", "r2", "1-r2", "RMSE", "MAPE"
 
