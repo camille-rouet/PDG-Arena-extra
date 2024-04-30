@@ -17,6 +17,7 @@ Source this script
 
 source("scripts/define_folders.R")
 source("scripts/generation-of-inventories/CR_methods_for_inventory_generation.R")
+source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
 
 # PARAMETERS ----
@@ -26,7 +27,7 @@ outputInConsole = FALSE # if TRUE, output is redirected in console instead of in
 # outputInConsole = TRUE # to comment
 
 # folder for writing inventories
-outputInventoryFolder = "inventories/2024-04-19_GMAP_reproFALSE_depth1600/"
+outputInventoryFolder = "inventories/2024-04-30_GMAP_publication/"
 
 # standard = trees are located and defined based on the GMAP inventory, output is one (eventually mixed) plot
 # regdemo_monosp = trees are all of the same (mean) age and (quadratic mean) dbh and they are located on a regular basis, two monospecific plot are made
@@ -51,7 +52,7 @@ nbAltitudeClasses = 5
 sites = c("vl", "vtx", "bg")
 
 # first year of simulation / year before the simulation begins (=the climatic year) / annee avant le debut des simulation (=année climatique) (cr-15.03.2024?)
-initYear = 1993
+initYear = 1995
 
 # If TRUE, diameter at a given are computed based on core data
 useTimeMachine = TRUE
@@ -107,16 +108,11 @@ path = paste0(pathFolder, fileName)
 dGMAP_LIDAR = read_delim(path, delim = ";", show_col_types = FALSE)
 
 
-# SITE SELECTION
-dGMAP_horsprod = subset(dGMAP_horsprod_all, site %in% sites)
-dGMAP_dendro = subset(dGMAP_dendro, site %in% sites)
-dGMAP_LIDAR = subset(dGMAP_LIDAR, site %in% sites)
-dGMAP_soil = dGMAP_soil[vapply(dGMAP_soil$code_site, function(x) grepl(x, pattern = "vl_|vtx_|bg_"), FUN.VALUE = T), ]
-
 # # CASTANEA SPECIES FILE
 CASTANEASpeciesFile = readCASTANEASpeciesFile(pathtofile = paste0(capsisPath, "data/castaneaonly/species/CastaneaSpecies_2022_05.txt"))
 speciesParameters = CASTANEASpeciesFile$parameters
 CASTANEASpeciesTable = CASTANEASpeciesFile$speciesTable
+
 
 
 
@@ -127,8 +123,6 @@ CASTANEASpeciesTable = CASTANEASpeciesFile$speciesTable
 # *****************************************
 
 # # Inventory option file
-pdgInventoryOptions = readInventoryOptionFile("scripts/generation-of-inventories/PDG_inventory_options.txt")
-
 pdgOptionFileFolder = paste0(myFolder, "01_docs-these/O_Sites_GMAP/GMAP_donnees/")
 pdgOptionFileName = "PDG_inventory_options_GMAP_simulations.txt"
 pdgInventoryOptions = readInventoryOptionFile(filePath = paste0(pdgOptionFileFolder, pdgOptionFileName))
@@ -223,6 +217,35 @@ targetVariance_g1max=targetSd_g1max^2
 # end genetic parameters
 
 
+# DATA TREATMENT ----
+
+# SITE SELECTION
+dGMAP_horsprod = subset(dGMAP_horsprod_all, site %in% sites)
+dGMAP_dendro = subset(dGMAP_dendro, site %in% sites)
+dGMAP_LIDAR = subset(dGMAP_LIDAR, site %in% sites)
+dGMAP_soil = dGMAP_soil[vapply(dGMAP_soil$code_site, function(x) grepl(x, pattern = "vl_|vtx_|bg_"), FUN.VALUE = T), ]
+
+
+# CLEAN GMAP TABLES
+dGMAP_horsprod_save_mort = dGMAP_horsprod # save all tree, including dead ones
+# Keep alive trees only
+dGMAP_horsprod = subset(dGMAP_horsprod,  mort == 0) 
+dGMAP_horsprod_save_vivant_allspecies = dGMAP_horsprod
+# Keep species of interest only
+dGMAP_horsprod = subset(dGMAP_horsprod,  essence %in% speciesFrenchNames)
+
+# num arbre as factor
+dGMAP_horsprod$num_arbre = as.numeric(dGMAP_horsprod$num_arbre)
+
+dGMAP_dendro$num_index = getNumIndex(dGMAP_dendro$num_arbre, dGMAP_dendro$num_tige)
+dGMAP_dendro$treeGlobalId = paste0(dGMAP_dendro$code_site, '_', dGMAP_dendro$num_index)
+dGMAP_horsprod$num_index = getNumIndex(as.numeric(dGMAP_horsprod$num_arbre), dGMAP_horsprod$num_tige)
+dGMAP_horsprod$treeGlobalId = paste0(dGMAP_horsprod$code_site, '_', dGMAP_horsprod$num_index)
+
+
+# GMAP tree-year table
+treeYearTable_GMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod, years = initYear:2013)
+
 
 
 # *****************************************
@@ -277,6 +300,8 @@ for(code_site in all_code_site){
   
   # horsprod
   dGMAP_hp_site = dGMAP_horsprod[dGMAP_horsprod$code_site == code_site, ]
+  dGMAP_hp_site_save_mort =  dGMAP_horsprod_save_mort[dGMAP_horsprod_save_mort$code_site == code_site, ]
+  dGMAP_hp_site_save_vivant_allspecies = dGMAP_horsprod_save_vivant_allspecies[dGMAP_horsprod_save_vivant_allspecies$code_site == code_site, ]
   
   # dendro
   if(code_site %in% dGMAP_dendro$code_site){
@@ -314,19 +339,6 @@ for(code_site in all_code_site){
   standType = unique(dGMAP_hp_site$peuplement)
   
   
-  # Selection des arbres vivants
-  dGMAP_hp_site_save_mort = dGMAP_hp_site
-  dGMAP_hp_site = subset(dGMAP_hp_site,  mort == 0)
-  
-  
-  # Selection des hêtres et sapins seulement
-  dGMAP_hp_site_save_vivant_allspecies = dGMAP_hp_site
-  dGMAP_hp_site = subset(dGMAP_hp_site,  essence %in% speciesFrenchNames)
-  
-  
-  
-  # num arbre as factor
-  dGMAP_hp_site$num_arbre = as.numeric(dGMAP_hp_site$num_arbre)
   
   nTiges = dim(dGMAP_hp_site)[1]
   
@@ -575,6 +587,9 @@ for(code_site in all_code_site){
     # load data for this stem
     dataTree = dGMAP_hp_site[dGMAP_hp_site$num_tige == numTigeChr, ]
     
+    treeYearTable_tree = subset(treeYearTable_GMAP, treeGlobalId == dataTree$treeGlobalId)
+    treeYearTable_tree_initYear = subset(treeYearTable_tree, year == initYear)
+    
     # stem index
     numArbre = dataTree$num_arbre
     numTige = dataTree$num_tige
@@ -615,43 +630,59 @@ for(code_site in all_code_site){
     
     # diameter (of 2013 and eventually older)
     dbh2013 = dataTree$circonference / pi
-    trees$dbh2013[whichTree] = dbh2013
+    height2013 = dataTree$htot
+    hcb2013 = dataTree$h_base_houppier
     
-    # use dbh from initYear computed using core data
-    timeMachineDBHCorrection = 1 # proportion dbhInitYear / dbh2013 
+    trees$dbh2013[whichTree] = dbh2013
+    trees$height2013[whichTree] = height2013
+    trees$hcb2013[whichTree] = hcb2013
+    
+    
+    # cr-2024.04.30, this is replaced by treeYearTable for harmonizing between inventory generation and analysis
+    # # use dbh from initYear computed using core data
+    # timeMachineDBHCorrection = 1 # proportion dbhInitYear / dbh2013 
+    # if (useTimeMachine) {
+    #   
+    #   if(hasDendro){
+    #   
+    #     coreIndexes = which(colnames(dataTree_dendro) == paste0("X", initYear)):which(colnames(dataTree_dendro) == "X2013")
+    #     
+    #     # if there is several lines in dataTree_dendro (it happens..), choose the line with max value of X2010 (arbitrary)
+    #     max2010GrowthLine = which.max(dataTree_dendro[["X2010"]])
+    #     dataTree_dendro1 = dataTree_dendro[max2010GrowthLine,]
+    #     
+    #     BAI = sum(dataTree_dendro1[, coreIndexes]) # cr-2024.04.26 should total BAI ignore the 2013 year, or the 1996 year ?
+    #     dbhInitYear = sqrt(dbh2013 ** 2 - BAI * 4 / pi) # calcul de dbh init en cm a partir de dbh 2013 et du BAI en cm2 
+    #     
+    #     
+    #     trees$dbh[whichTree] = round(dbhInitYear, 3)
+    #     
+    #     timeMachineDBHCorrection = dbhInitYear / dbh2013 # for later use with height
+    #     timeMachineBasalAreaCorrection = dbhInitYear**2 / dbh2013**2 # for later use with height
+    #     
+    #   }else{ # no dendrometric data
+    #     trees$dbh[whichTree] = -11
+    #   }
+    #   
+    # } else{
+    #   trees$dbh[whichTree] = round(dbh2013, 3) # $circonference pour Data_arbre_placettes*.csv / $perimetre pour matt_dendro*.csv
+    # }
+    # 
+    # 
+    # # height alteration by timeMachine (only if useTimeMachine == TRUE)
+    # trees$height[whichTree] = round(dataTree$htot * timeMachineDBHCorrection, 3) # $htot pour Data_arbre_placettes*.csv / $hverticale pour matt_dendro*.csv
+    # trees$hcb[whichTree] = round(dataTree$h_base_houppier * timeMachineDBHCorrection, 3) # $h_base_houppier pour Data_arbre_placettes*.csv / $hhouppier pour matt_dendro*.csv
+    
     if (useTimeMachine) {
-      
-      if(hasDendro){
-      
-        coreIndexes = which(colnames(dataTree_dendro) == paste0("X", initYear)):which(colnames(dataTree_dendro) == "X2013")
-        
-        # if there is several lines in dataTree_dendro (it happens..), choose the line with max value of X2010 (arbitrary)
-        max2010GrowthLine = which.max(dataTree_dendro[["X2010"]])
-        dataTree_dendro1 = dataTree_dendro[max2010GrowthLine,]
-        
-        BAI = sum(dataTree_dendro1[, coreIndexes]) # cr-2024.04.26 should total BAI ignore the 2013 year, or the 1996 year ?
-        dbhInitYear = sqrt(dbh2013 ** 2 - BAI * 4 / pi) # calcul de dbh init en cm a partir de dbh 2013 et du BAI en cm2 
-        
-        
-        trees$dbh[whichTree] = round(dbhInitYear, 3)
-        
-        timeMachineDBHCorrection = dbhInitYear / dbh2013 # for later use with height
-        timeMachineBasalAreaCorrection = dbhInitYear**2 / dbh2013**2 # for later use with height
-        
-      }else{ # no dendrometric data
-        trees$dbh[whichTree] = -11
-      }
-      
-    } else{
-      trees$dbh[whichTree] = round(dbh2013, 3) # $circonference pour Data_arbre_placettes*.csv / $perimetre pour matt_dendro*.csv
+      trees$dbh[whichTree] = treeYearTable_tree_initYear$dbhRetro
+      trees$height[whichTree] = treeYearTable_tree_initYear$hauteurRetro
+      trees$hcb[whichTree] = treeYearTable_tree_initYear$hauteurRetro * (hcb2013 / height2013) # hcb is kept proportionnal to height
+    }else{
+      trees$dbh[whichTree] = dbh2013
+      trees$height[whichTree] = height2013
+      trees$hcb[whichTree] = hcb2013
     }
     
-    trees$height2013[whichTree] = dataTree$htot
-    trees$hcb2013[whichTree] = dataTree$h_base_houppier
-    
-    # alteration by timeMachine (only if useTimeMachine == TRUE)
-    trees$height[whichTree] = round(dataTree$htot * timeMachineDBHCorrection, 3) # $htot pour Data_arbre_placettes*.csv / $hverticale pour matt_dendro*.csv
-    trees$hcb[whichTree] = round(dataTree$h_base_houppier * timeMachineDBHCorrection, 3) # $h_base_houppier pour Data_arbre_placettes*.csv / $hhouppier pour matt_dendro*.csv
     
     
     # handle age in matt_dendro file (there can be two line for one stem..)
@@ -730,7 +761,11 @@ for(code_site in all_code_site){
   } # end loop on trees
   
   
-  # Correction of age (HERE, FOR TREES THAT ARE NOT IN GMAP_dendro /!\)
+  
+  # NON-CORED TREES, age, dbh.. ----
+  # FOR TREES THAT ARE NOT IN GMAP_dendro /!\
+  
+  # Correction of age
   trees$ageInDendro = trees$age >= 0
   ageNotInDendro = which(!trees$ageInDendro)
   if(length(ageNotInDendro) > 0){
@@ -763,105 +798,106 @@ for(code_site in all_code_site){
     stop("Some tree has -1 as dbh. Which means that they have no dbh attributed..")
   }
   
-  # is there unexpected negative of null value ?
-  if(TRUE %in% (trees$dbh <=0 -11 & trees$dbh != -11)){
+  # is there unexpected negative or null value ?
+  if(TRUE %in% (trees$dbh <= 0)){
     stop("Some unexpected negative of null value of dbh has pop up..")
   }
   
   # After these two checks, only positive or -11 value of dbh can be found
   
-  # Correction of dbh, for trees whose basalAreaIncrement is unknown
-  if(useTimeMachine){
-    
-    dbhIsMissingList = trees$dbh == -11
-    
-    if(TRUE %in% dbhIsMissingList){
-      
-      # # restart debug
-      # trees$dbh[trees$missingGrowthData] = -11
-      # trees$height[trees$missingGrowthData] = trees$height2013[trees$missingGrowthData]
-      # trees$hcb[trees$missingGrowthData] = trees$hcb2013[trees$missingGrowthData]
-      # # end restart debug
-      # 
-      # # debug
-      # trees = trees[trees$sp == 1, ]
-      # trees$missingGrowthData = trees$dbh == -11
-      # valid_trees = trees[!trees$missingGrowthData, ]
-      # 
-      # # proportionnal variation dbh
-      # trees = computeMissingVariableProportionnaly(trees, "dbh2013", "dbh", "sp", variableYisMissing = trees$missingGrowthData, method = "proportionnal_mean")
-      # trees = computeMissingVariableProportionnaly(trees, "height2013", "height", "sp", variableYisMissing = trees$missingGrowthData, method = "proportionnal_mean")
-      # trees = computeMissingVariableProportionnaly(trees, "hcb2013", "hcb", "sp", variableYisMissing = trees$missingGrowthData, method = "proportionnal_mean")
-      # 
-      # # plot dbh vs dbh 2013
-      # ggplot(trees, aes(x = dbh2013, y = dbh, color = as.factor(sp))) + geom_point(aes(size = missingGrowthData)) +
-      #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm") + coord_cartesian(ylim = c(-10, 80), xlim = c(0,90))
-      # 
-      # # plot height and hcb vs dbh 2013
-      # color1 = hsv(0.7, 0.4, 1)
-      # color2 = hsv(0.1, 0.7, 1)
-      # ggplot(trees, aes(x = dbh2013, y = height, shape = as.factor(sp))) + geom_point(color = color1, aes(size = missingGrowthData)) +
-      #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm", color = color1) + coord_cartesian(ylim = c(0, 40), xlim = c(0,90)) +
-      #   geom_point(color = color2, aes(x = dbh2013, y = hcb, size = missingGrowthData)) +
-      #   geom_smooth(data = subset(trees, !missingGrowthData), linetype = "dashed", color = color2, aes(x = dbh2013, y = hcb), method = "lm")
-      # 
-      # 
-      # ggplot(trees, aes(x = height2013, y = height, shape = as.factor(sp))) + geom_point(color = color1, aes(size = missingGrowthData)) +
-      #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm", color = color1) +
-      #   coord_cartesian(ylim = c(0, 35), xlim = c(0,40)) +
-      #   geom_point(color = color2, aes(x = height2013, y = hcb, size = missingGrowthData)) +
-      #   geom_smooth(data = subset(trees, !missingGrowthData), linetype = "dashed", color = color2, aes(x = height2013, y = hcb), method = "lm") +
-      #   geom_abline(slope = 1, alpha = 0.5)
-      # 
-      # ggplot(trees, aes(x = hcb2013, y = height, shape = as.factor(sp))) + geom_point(color = color1, aes(size = missingGrowthData)) +
-      #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm", color = color1) +
-      #   coord_cartesian(ylim = c(0, 35), xlim = c(0,40)) +
-      #   geom_point(color = color2, aes(x = hcb2013, y = hcb, size = missingGrowthData)) +
-      #   geom_smooth(data = subset(trees, !missingGrowthData), linetype = "dashed", color = color2, aes(x = hcb2013, y = hcb), method = "lm") +
-      #   geom_abline(slope = 1, alpha = 0.5)
-      # 
-      # 
-      # trees$height - trees$hcb
-      # 
-      # # end debug
-      # 
-      # # test non negative coefficients
-      # 
-      # ggplot(trees, aes(x = dbh2013, y = hcb2013, color = as.factor(sp))) + geom_point() + geom_smooth(method = "lm", data = subset(trees, !missingGrowthData))
-      # 
-      # library(colf)
-      # 
-      # model1 = lm(data = trees[!trees$missingGrowthData,], hcb2013 ~ dbh2013) ; summary(model1)
-      # model3 = colf_nlxb(data = trees[!trees$missingGrowthData,], formula = hcb2013 ~ dbh2013, lower = 0) ; summary(model3)
-      # 
-      # ggplot(trees, aes(x = dbh2013, y = hcb2013)) + geom_point(size= 2, aes(shape = missingGrowthData)) + coord_cartesian(xlim = c(0,NA), ylim = c(0,NA)) + 
-      #   geom_abline(intercept = model3$coefficients[1], slope = model3$coefficients[2], alpha = 0.4)
-      # 
-      # # end test
-      
-      # linear model
-      # "pour les arbres dont on connait le dbh (calculé à partir des accroissements et dbh 2013), pour un dbh2013 de X, on a un dbh de Y"
-      trees = computeMissingVariableProportionnaly(trees, "dbh2013", "dbh", "sp", dbhIsMissingList, method = "proportionnal_mean")
-      trees = computeMissingVariableProportionnaly(trees, "height2013", "height", "sp", dbhIsMissingList, method = "proportionnal_mean")
-      trees = computeMissingVariableProportionnaly(trees, "hcb2013", "hcb", "sp", dbhIsMissingList, method = "proportionnal_mean")
-      
-      # # old way
-      # # only valid dbh
-      # validTrees = trees[!dbhIsMissingList, ]
-      # 
-      # meanTimeMachineDBHCorrection = mean(validTrees$dbh / validTrees$dbh2013)
-      # meanTimeMachineBasalAreaCorrection = mean(validTrees$dbh**2 / validTrees$dbh2013**2)
-      # 
-      # # should be equivalent to meanTimeMachineDBHCorrection
-      # meanTimeMachineHeightCorrection = mean(validTrees$height / validTrees$height2013)
-      # meanTimeMachineHcbCorrection = mean(validTrees$hcb / validTrees$hcb2013)
-      # 
-      # trees$dbh[dbhIsNa] = round( trees$dbh2013[dbhIsNa] * meanTimeMachineDBHCorrection, 3 )
-      # 
-      # trees$height[dbhIsNa] = round( trees$height2013[dbhIsNa] * meanTimeMachineHeightCorrection, 3 )
-      # trees$hcb[dbhIsNa] = round( trees$hcb2013[dbhIsNa] * meanTimeMachineHcbCorrection, 3 ) 
-    }
-  }
+  # cr-2024.04.30, this is replaced by using treeYearTable for harmonizing between inventory generation and analysis
+  # # Correction of passed dbh, for trees whose basalAreaIncrement is unknown
+  # if(useTimeMachine){
+  #   
+  #   dbhIsMissingList = trees$dbh == -11
+  #   
+  #   if(TRUE %in% dbhIsMissingList){
+  #     
+  #     # # restart debug
+  #     # trees$dbh[trees$missingGrowthData] = -11
+  #     # trees$height[trees$missingGrowthData] = trees$height2013[trees$missingGrowthData]
+  #     # trees$hcb[trees$missingGrowthData] = trees$hcb2013[trees$missingGrowthData]
+  #     # # end restart debug
+  #     # 
+  #     # # debug
+  #     # trees = trees[trees$sp == 1, ]
+  #     # trees$missingGrowthData = trees$dbh == -11
+  #     # valid_trees = trees[!trees$missingGrowthData, ]
+  #     # 
+  #     # # proportionnal variation dbh
+  #     # trees = computeMissingVariableProportionnaly(trees, "dbh2013", "dbh", "sp", variableYisMissing = trees$missingGrowthData, method = "proportionnal_mean")
+  #     # trees = computeMissingVariableProportionnaly(trees, "height2013", "height", "sp", variableYisMissing = trees$missingGrowthData, method = "proportionnal_mean")
+  #     # trees = computeMissingVariableProportionnaly(trees, "hcb2013", "hcb", "sp", variableYisMissing = trees$missingGrowthData, method = "proportionnal_mean")
+  #     # 
+  #     # # plot dbh vs dbh 2013
+  #     # ggplot(trees, aes(x = dbh2013, y = dbh, color = as.factor(sp))) + geom_point(aes(size = missingGrowthData)) +
+  #     #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm") + coord_cartesian(ylim = c(-10, 80), xlim = c(0,90))
+  #     # 
+  #     # # plot height and hcb vs dbh 2013
+  #     # color1 = hsv(0.7, 0.4, 1)
+  #     # color2 = hsv(0.1, 0.7, 1)
+  #     # ggplot(trees, aes(x = dbh2013, y = height, shape = as.factor(sp))) + geom_point(color = color1, aes(size = missingGrowthData)) +
+  #     #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm", color = color1) + coord_cartesian(ylim = c(0, 40), xlim = c(0,90)) +
+  #     #   geom_point(color = color2, aes(x = dbh2013, y = hcb, size = missingGrowthData)) +
+  #     #   geom_smooth(data = subset(trees, !missingGrowthData), linetype = "dashed", color = color2, aes(x = dbh2013, y = hcb), method = "lm")
+  #     # 
+  #     # 
+  #     # ggplot(trees, aes(x = height2013, y = height, shape = as.factor(sp))) + geom_point(color = color1, aes(size = missingGrowthData)) +
+  #     #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm", color = color1) +
+  #     #   coord_cartesian(ylim = c(0, 35), xlim = c(0,40)) +
+  #     #   geom_point(color = color2, aes(x = height2013, y = hcb, size = missingGrowthData)) +
+  #     #   geom_smooth(data = subset(trees, !missingGrowthData), linetype = "dashed", color = color2, aes(x = height2013, y = hcb), method = "lm") +
+  #     #   geom_abline(slope = 1, alpha = 0.5)
+  #     # 
+  #     # ggplot(trees, aes(x = hcb2013, y = height, shape = as.factor(sp))) + geom_point(color = color1, aes(size = missingGrowthData)) +
+  #     #   geom_smooth(data = subset(trees, !missingGrowthData), method = "lm", color = color1) +
+  #     #   coord_cartesian(ylim = c(0, 35), xlim = c(0,40)) +
+  #     #   geom_point(color = color2, aes(x = hcb2013, y = hcb, size = missingGrowthData)) +
+  #     #   geom_smooth(data = subset(trees, !missingGrowthData), linetype = "dashed", color = color2, aes(x = hcb2013, y = hcb), method = "lm") +
+  #     #   geom_abline(slope = 1, alpha = 0.5)
+  #     # 
+  #     # 
+  #     # trees$height - trees$hcb
+  #     # 
+  #     # # end debug
+  #     # 
+  #     # # test non negative coefficients
+  #     # 
+  #     # ggplot(trees, aes(x = dbh2013, y = hcb2013, color = as.factor(sp))) + geom_point() + geom_smooth(method = "lm", data = subset(trees, !missingGrowthData))
+  #     # 
+  #     # library(colf)
+  #     # 
+  #     # model1 = lm(data = trees[!trees$missingGrowthData,], hcb2013 ~ dbh2013) ; summary(model1)
+  #     # model3 = colf_nlxb(data = trees[!trees$missingGrowthData,], formula = hcb2013 ~ dbh2013, lower = 0) ; summary(model3)
+  #     # 
+  #     # ggplot(trees, aes(x = dbh2013, y = hcb2013)) + geom_point(size= 2, aes(shape = missingGrowthData)) + coord_cartesian(xlim = c(0,NA), ylim = c(0,NA)) + 
+  #     #   geom_abline(intercept = model3$coefficients[1], slope = model3$coefficients[2], alpha = 0.4)
+  #     # 
+  #     # # end test
+  #     
+  #     # linear model
+  #     # "pour les arbres dont on connait le dbh (calculé à partir des accroissements et dbh 2013), pour un dbh2013 de X, on a un dbh de Y"
+  #     trees = computeMissingVariableProportionnaly(trees, "dbh2013", "dbh", "sp", dbhIsMissingList, method = "proportionnal_mean")
+  #     trees = computeMissingVariableProportionnaly(trees, "height2013", "height", "sp", dbhIsMissingList, method = "proportionnal_mean")
+  #     trees = computeMissingVariableProportionnaly(trees, "hcb2013", "hcb", "sp", dbhIsMissingList, method = "proportionnal_mean")
+  #     
+  #     # # old way
+  #     # # only valid dbh
+  #     # validTrees = trees[!dbhIsMissingList, ]
+  #     # 
+  #     # meanTimeMachineDBHCorrection = mean(validTrees$dbh / validTrees$dbh2013)
+  #     # meanTimeMachineBasalAreaCorrection = mean(validTrees$dbh**2 / validTrees$dbh2013**2)
+  #     # 
+  #     # # should be equivalent to meanTimeMachineDBHCorrection
+  #     # meanTimeMachineHeightCorrection = mean(validTrees$height / validTrees$height2013)
+  #     # meanTimeMachineHcbCorrection = mean(validTrees$hcb / validTrees$hcb2013)
+  #     # 
+  #     # trees$dbh[dbhIsNa] = round( trees$dbh2013[dbhIsNa] * meanTimeMachineDBHCorrection, 3 )
+  #     # 
+  #     # trees$height[dbhIsNa] = round( trees$height2013[dbhIsNa] * meanTimeMachineHeightCorrection, 3 )
+  #     # trees$hcb[dbhIsNa] = round( trees$hcb2013[dbhIsNa] * meanTimeMachineHcbCorrection, 3 ) 
+  #   }
+  # }
   
   
   

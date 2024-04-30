@@ -3522,12 +3522,14 @@ makeTreeYearTable = function(simulationList){
 
 # Make a table with tree-year lines containing BAI measured (dGMAP_dendro) and ADD INFO ON TREES (horsprod)
 # one line per year of measure in dGMAP_dendro and per stem found in dGMAP_horsprod
-makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
+# BAI of non-cored trees are inferred by supposing a constant ratio BAI/BA for species & plot and (if not possible) species & site
+# Passed dbh are inferred based on BAI
+# Passed height are inferred based on passed dbh + a log ~ log relationship
+makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod, years){
   
   
   # find table dimension 
-  yearsLoop = 1993:2013
-  nTreeYearTot = length(dGMAP_horsprod$treeGlobalId) * length(yearsLoop)
+  nTreeYearTot = length(dGMAP_horsprod$treeGlobalId) * length(years)
   
   # create table
   treeYearTableGMAP = tibble( treeGlobalId = "",
@@ -3574,7 +3576,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
     }
     
     # for all growth years of a line of dGMAP_dendro
-    for(year in yearsLoop){
+    for(year in years){
       
       BAI_mes = -999
       WVI_mes = -999 # wood volume increment in m3
@@ -3671,7 +3673,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
         treeYearTable_stand_year_species = subset(treeYearTable_stand_year, species == aSpecies)
         treeYearTable_stand_year_species_measured = subset(treeYearTable_stand_year, species == aSpecies & goodCarrots == TRUE)
         
-        # si aucun individu de l'espece n'est present, on utilise le rapport BAI/BA des individus carrotés de même espèce, code_site et années
+        # si aucun individu de l'espece n'est present, on utilise le rapport BAI/BA des individus carrotés de même espèce, site et années
         if(dim(treeYearTable_stand_year_species_measured)[1] == 0){
           aSite = getSiteFromCodeSite(a_code_site)
           # treeYearTable_stand_year_species_measured = subset(treeYearTable_stand_year, goodCarrots == TRUE)
@@ -3703,10 +3705,10 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
     basalArea = pi * (treeDbhFinal/2)**2 # cm2
     
     # for the year 2013, dbhRetro = dbhFinal
-    treeYearTableGMAP[treeYearTableGMAP$treeGlobalId == treeId & treeYearTableGMAP$year == max(yearsLoop), ]$dbhRetro = treeDbhFinal
+    treeYearTableGMAP[treeYearTableGMAP$treeGlobalId == treeId & treeYearTableGMAP$year == max(years), ]$dbhRetro = treeDbhFinal
     
     # loop on reverse years
-    for(a_year in rev(yearsLoop)-1){
+    for(a_year in rev(years)-1){
       BAItreeyear = treeSet[treeSet$year == (a_year+1), ]$BAI_mes # eg, growth on 2013 to have the 2012 dbh
       basalArea = basalArea - BAItreeyear # in cm2
       dbhRetro = sqrt(basalArea / pi) * 2 # in cm
@@ -3721,6 +3723,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod){
   
   
   # Computed passed height
+  # Passed height is inferred using a log(height) = intercept + slope log(dbh) equation fitted on measureds (aka, data at the year of measurement)
   lm_table = tibble(essence = "", site = "", intercept = 0, slope = 0, 
                     .rows = length(unique(dGMAP_horsprod$essence)) * length(unique(dGMAP_horsprod$site)))
   i = 1

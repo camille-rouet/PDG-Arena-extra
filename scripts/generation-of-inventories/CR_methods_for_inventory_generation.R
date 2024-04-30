@@ -1088,8 +1088,6 @@ printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth
       RDIbeech = max(1, nha / exp(12.95  - 1.941 * log(meanDbh)))
       RDIfir = max(1, nha/ exp(12.621 - 1.779 * log(meanDbh)))
       
-      cat(paste0("RDI beech: ", RDIbeech, "\nRDI fir: ", RDIfir))
-      
       # convert to crown area
       treesTable$crownArea = pi*treesTable$crownRadius**2
       

@@ -62,7 +62,7 @@ dGMAP_horsprod = subset(dGMAP_horsprod, site %in% c("vtx", "bg", "vl"))
 
 
 # GMAP table with all trees (ie even those who were not simulated, ie tree that were dead, from an other species than beech and fir, or from stand that were not simulated)
-# treeYearTable_GMAP_all = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod)
+# treeYearTable_GMAP_all = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod, years = 1993:2013)
 
 
 
@@ -406,7 +406,7 @@ warning(paste0("These trees were measured but not simulated in irregdemo plurisp
 dGMAP_horsprod_simulatedTrees = subset(dGMAP_horsprod, treeGlobalId %in% treeid_simulated)
 
 # tree year
-treeYearTable_GMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod_simulatedTrees)
+treeYearTable_GMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod_simulatedTrees, years = 1993:2013)
 
 # all should be FALSE
 table(is.na(treeYearTable_GMAP$BAI_mes))
