@@ -73,9 +73,11 @@ import_irreg_demo_monosp = FALSE # import E1B mode ?
 import_CAST = TRUE
 keepFilter = ""
 
+currentSimulation = "2024-05-07_GMAP_publication/"
 currentSimulation = "2023-12-15_goodHeightGoodAlignment/"
-simulationFolderGlobal = paste0("2023_simu_article/", currentSimulation)
-folderPlot = paste0("plots/", currentSimulation, "divers/")
+simulationFolderGlobal = paste0(ifelse(grepl(currentSimulation, pattern = "2023"), "2023", "2024"), 
+                                "_simu_article/", currentSimulation)
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 
 
 # import CASTANEA simulation
@@ -704,7 +706,7 @@ yValMax = max(xValMax, yValMax)
 coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
 
 size = 4
-folderPlot = paste0("plots/", currentSimulation, "divers/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 for(i in 1:length(standPeriodTable_list)){
   a_standPeriodTable = standPeriodTable_list[[i]]
   a_title = title_list[[i]]
@@ -752,7 +754,7 @@ for(i in 1:length(standPeriodTable_list)){
 #   geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
 #   scale_shape_manual(values = c(15,19,17)) 
 # 
-# folderPlot = paste0("plots/", currentSimulation, "divers/")
+# folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 # saveLastGgPlot(folderPlot, plot_width = 1440, ratio = 4/3, fileName = paste0("bysitecompo", ".png"))
 
 
@@ -785,7 +787,7 @@ rownames(correlationSimulationMatrix) = names(correlationSimulationMatrix)
 correlationMode = "correlation" # RMSE 1-r2 correlation
 variableOfInterest = "GPPy_m2_sim"
 
-folderPlot = paste0("plots/", currentSimulation, "divers/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 
 nI = dim(correlationSimulationMatrix)[1]
 nJ = dim(correlationSimulationMatrix)[2]
@@ -853,7 +855,7 @@ ggcorrplot(myMat, legend.title = correlationMode,
         # legend.key.size = unit(1, 'cm'), # legend size
         text=element_text(size=textSize) # text size
   ) 
-folderPlot = paste0("plots/", currentSimulation, "divers/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 saveLastGgPlot(folderPlot, plot_height = 720, ratio = 4/3, fileSuffix = ".pdf")
 
 
@@ -927,7 +929,7 @@ ggplot(simulationComparaisonTable_sub,
   annotate("text", x=1700, y= 1600, label= "1:1", size = 4.5) +
   annotate("text", x=920, y= 1250, label= paste0("r = ", round(cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]]), 3)
   ) , size = 4.5) 
-folderPlot = paste0("plots/", currentSimulation, "divers/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 saveLastGgPlot(folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
 
 
@@ -955,39 +957,47 @@ coefficients_list = c("r2", "MAPE")
 stat_list = list()
 index = 1
 for(a_standPeriodTable in standPeriodTable_list){
-  stat_list[[suffix_list[index]]] = getComparisonCoefficientPerSiteAndComposition(subset(a_standPeriodTable, period == "1996_2013"), var1, var2, coefficients_list)
+  # subTable = subset(a_standPeriodTable, period == "1996_2013")
+  subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_haut_sp_2"))
+  # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_bas_sp_4", "bg_haut_sp_2"))
+  # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_bas_sp_4", "bg_bas_sp_5", "bg_haut_sp_2"))
+  stat_list[[suffix_list[index]]] = getComparisonCoefficientPerSiteAndComposition(
+    subTable, 
+    var1, var2, coefficients_list)
   index = index + 1
 }
 
 # Show the coefficients
-printList = list("GLOBAL STAT", 
+printList_global = list("GLOBAL STAT", 
                  "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
-  printList[[stat_item_name]] = stat_list[[stat_item_name]][["global"]]
+  printList_global[[stat_item_name]] = stat_list[[stat_item_name]][["global"]]
 }
-print(printList)
 
-printList = list("MIXED PLOT STAT",
+printList_mixed = list("MIXED PLOT STAT",
                  "Mixing effect : E0 vs E1A", 
                  "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
-  printList[[stat_item_name]] = stat_list[[stat_item_name]][["comp_m"]]
+  printList_mixed[[stat_item_name]] = stat_list[[stat_item_name]][["comp_m"]]
 }
-print(printList)
 
-printList = list("BEECH PLOT STAT", 
+printList_beech = list("BEECH PLOT STAT", 
                  "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
-  printList[[stat_item_name]] = stat_list[[stat_item_name]][["comp_ph"]]
+  printList_beech[[stat_item_name]] = stat_list[[stat_item_name]][["comp_ph"]]
 }
-print(printList)
 
-printList = list("FIR PLOT STAT", 
+printList_fir = list("FIR PLOT STAT", 
                  "Structure effect : E1A vs E2")
 for(stat_item_name in names(stat_list)){
-  printList[[stat_item_name]] = stat_list[[stat_item_name]][["comp_sp"]]
+  printList_fir[[stat_item_name]] = stat_list[[stat_item_name]][["comp_sp"]]
 }
-print(printList)
+
+
+print(printList_global)
+print(printList_mixed)
+print(printList_beech)
+print(printList_fir)
 
 
 
@@ -1107,7 +1117,7 @@ lollypopTable_long$simu = str_match(lollypopTable_long$variable, pattern = "E0|E
 #   # ylab("Canopy absorbance") +
 #   xlab("Placette")
 # 
-# folderPlot = paste0("plots/", currentSimulation, "divers/")
+# folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 # saveLastGgPlot(folderPlot, plot_height = 720, ratio = 4/3, fileSuffix = ".pdf")
 
 
@@ -1141,9 +1151,10 @@ variablesPlot = c(
   "transpiration",
   # "REWmin", 
   # "RU_level_min",
-  # "GPPy_m2_sim", 
-  # "vegAbsorbance", 
-  "RU_shortage_max")
+  "GPPy_m2_sim",
+  "vegAbsorbance"
+  # "RU_shortage_max"
+  )
 
 # Plot boxplot
 ggplot(subset(lollypopTable_long, variable_short %in% variablesPlot &
@@ -1153,8 +1164,8 @@ ggplot(subset(lollypopTable_long, variable_short %in% variablesPlot &
   facet_wrap(. ~ variable_short, scales="free", 
              labeller = labeller(variable_short = c(
                "transpiration" = "Transpiration (mm)",
-               # "GPPy_m2_sim" = "GPP (gC/m2/yr)",
-               # "vegAbsorbance" = "Absorbance (no unit)",
+               "GPPy_m2_sim" = "GPP (gC/m2/yr)",
+               "vegAbsorbance" = "Absorbance (no unit)",
                "REWmin" = "Min yearly water level (%)",
                "RU_level_min" = "Min yearly water level (mm)",
                "RU_shortage_max" = "Maximum water shortage (mm)"))) +
@@ -1172,7 +1183,7 @@ ggplot(subset(lollypopTable_long, variable_short %in% variablesPlot &
 
 
 
-saveLastGgPlot(folderPlot, plot_height = 720, ratio = 4/3, scale = 0.7, fileSuffix = ".pdf")
+saveLastGgPlot(folderPlot, plot_height = 720, ratio =2, scale = 0.7, fileSuffix = ".pdf")
 
 
 
@@ -1203,7 +1214,7 @@ wilcox.test(lollypopTable$vegAbsorbance_E0, lollypopTable$vegAbsorbance_E1A, pai
 
 
 # 2024.04.26 Check height ~ dbh relationship
-folderPlot = paste0("plots/", currentSimulation, "height_dbh/")
+folderPlot = paste0("local_plots/", currentSimulation, "height_dbh/")
 
 # 
 ggplot(dGMAP_horsprod_simulatedTrees, aes(x = dbh, y = htot, color = site)) + geom_point() + facet_wrap( essence ~ site ) + ylim(c(0, NA)) + xlim(c(0, NA)) + guides(color = F)
