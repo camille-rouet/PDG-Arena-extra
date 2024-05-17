@@ -4508,8 +4508,12 @@ getSiteFromCodeSite = function(code_site){
 
 # extract GMAP composition from code_site
 getCompositionFromCodeSite = function(code_site){
+  if(length(code_site) > 1){
+    return( vapply(code_site, FUN = getCompositionFromCodeSite, FUN.VALUE = "", USE.NAMES = F) )
+  }
+  
   for(composition in c("m", "ph", "sp")){
-    compositionPattern = paste0("_", composition, "_")
+    compositionPattern = paste0("_", composition)
     if(grepl(code_site, pattern = compositionPattern)){
       return(composition)
     }
@@ -4581,10 +4585,10 @@ getClassSizefromCode_site = function(a_code_site){
 }
 
 # get composition in string based on codesite
-getCompositionfromCode_site = function(a_code_site){
+getCompositionfromCodesite_onf = function(a_code_site){
   
   if(length(a_code_site) > 1){
-    return( vapply(a_code_site, FUN = getCompositionfromCode_site, FUN.VALUE = "", USE.NAMES = F) )
+    return( vapply(a_code_site, FUN = getCompositionfromCodesite_onf, FUN.VALUE = "", USE.NAMES = F) )
   }
   
   splitlist = strsplit(a_code_site, split = "_")[[1]]

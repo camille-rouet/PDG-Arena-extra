@@ -27,7 +27,7 @@ outputInConsole = FALSE # if TRUE, output is redirected in console instead of in
 # outputInConsole = TRUE # to comment
 
 # folder for writing inventories
-outputInventoryFolder = "inventories/2024-04-30_GMAP_publication/"
+outputInventoryFolder = "inventories/2024-05-06_GMAP_publication/"
 
 # standard = trees are located and defined based on the GMAP inventory, output is one (eventually mixed) plot
 # regdemo_monosp = trees are all of the same (mean) age and (quadratic mean) dbh and they are located on a regular basis, two monospecific plot are made
@@ -56,6 +56,8 @@ initYear = 1995
 
 # If TRUE, diameter at a given are computed based on core data
 useTimeMachine = TRUE
+
+PAI_source = "REMOTE" # "REMOTE" or "TLS"
 
 thisScriptOptions = tibble(outputInConsole = outputInConsole,
                            outputInventoryFolder = outputInventoryFolder,
@@ -107,6 +109,24 @@ fileName = "GMAP_sites.csv"
 path = paste0(pathFolder, fileName)
 dGMAP_LIDAR = read_delim(path, delim = ";", show_col_types = FALSE)
 
+# GMAP LAI from REMOTE SENSING
+pathFolder = paste0(myFolder, "01_docs-these/O_Sites_GMAP/GMAP_LAI/")
+fileName = "LAImax_PROBAV_GMAP.csv"
+path = paste0(pathFolder, fileName)
+dGMAP_LAI_REMOTE = read_delim(path, delim = ";", show_col_types = FALSE)
+dGMAP_LAI_REMOTE$LAImax_mean = apply(dGMAP_LAI_REMOTE[, paste0(1999:2013) ], FUN = mean, MARGIN = 1)
+dGMAP_LAI_REMOTE$site = getSiteFromCodeSite(dGMAP_LAI_REMOTE$code_site)
+dGMAP_LAI_REMOTE$composition = getCompositionFromCodeSite(dGMAP_LAI_REMOTE$code_site)
+dGMAP_LAI_REMOTE$code_site_bis = dGMAP_LAI_REMOTE$code_site
+dGMAP_LAI_REMOTE$code_site[dGMAP_LAI_REMOTE$code_site_bis == "vl_112_m"] = "vl_inter_m_5"
+dGMAP_LAI_REMOTE$code_site[dGMAP_LAI_REMOTE$code_site_bis == "vl_112_ph"] = "vl_inter_ph_5"
+dGMAP_LAI_REMOTE$code_site[dGMAP_LAI_REMOTE$code_site_bis == "vl_112_sp"] = "vl_inter_sp_5"
+
+# Les LAI remote et Lidar ne collent pas. Sans doute que la grille de 1km est trop imprécise
+# Les LAI remote ventoux sont nettement distingués et plus bas
+# dGMAP_LAI = inner_join(dGMAP_LIDAR, dGMAP_LAI_REMOTE)
+# ggplot(dGMAP_LAI, aes(x = PAI, y = LAImax_mean, color = composition, shape = site)) + geom_point(size = 2) + xlim(c(0, 6)) + ylim(c(0, 6)) + geom_abline(alpha= 0.2)
+
 
 # # CASTANEA SPECIES FILE
 CASTANEASpeciesFile = readCASTANEASpeciesFile(pathtofile = paste0(capsisPath, "data/castaneaonly/species/CastaneaSpecies_2022_05.txt"))
@@ -153,7 +173,11 @@ speciesFrenchNames = demographic_parameters$speciesFrenchNames
 fmIdSp = demographic_parameters$fmIdSp # castanea species codes
 idSp = demographic_parameters$idSp # species name for PDG inventory
 
-meanPAI_LIDAR = round(mean(dGMAP_LIDAR$PAI, na.rm = T), digits = 2)
+if(PAI_source == "TLS"){
+  meanPAI_LIDAR = round(mean(dGMAP_LIDAR$PAI, na.rm = T), digits = 2)
+}else if(PAI_source == "REMOTE"){
+  meanPAI_LIDAR = round(mean(dGMAP_LAI_REMOTE$LAImax_mean, na.rm = T), digits = 2)
+}
 
 
 
@@ -223,6 +247,7 @@ targetVariance_g1max=targetSd_g1max^2
 dGMAP_horsprod = subset(dGMAP_horsprod_all, site %in% sites)
 dGMAP_dendro = subset(dGMAP_dendro, site %in% sites)
 dGMAP_LIDAR = subset(dGMAP_LIDAR, site %in% sites)
+dGMAP_LAI_REMOTE = subset(dGMAP_LAI_REMOTE, site %in% sites)
 dGMAP_soil = dGMAP_soil[vapply(dGMAP_soil$code_site, function(x) grepl(x, pattern = "vl_|vtx_|bg_"), FUN.VALUE = T), ]
 
 
@@ -287,8 +312,10 @@ for(code_site in all_code_site){
     next
   }
   
-  if( !code_site %in% dGMAP_LIDAR$code_site & code_site %in% dGMAP_LIDAR$code_site_2 ){
-    stop(paste0( code_site, "is in dGMAP_LIDAR$code_site2"))
+  if(PAI_source == "TLS"){
+    if( !code_site %in% dGMAP_LIDAR$code_site & code_site %in% dGMAP_LIDAR$code_site_2 ){
+      stop(paste0( code_site, "is in dGMAP_LIDAR$code_site2"))
+    }
   }
   
   
@@ -322,15 +349,26 @@ for(code_site in all_code_site){
   
   # LIDAR
   LAI_LIDAR = meanPAI_LIDAR
-  if(code_site %in% dGMAP_LIDAR$code_site){
-    dGMAP_LIDAR_site = dGMAP_LIDAR[dGMAP_LIDAR$code_site == code_site, ]
-    if(dGMAP_LIDAR_site$hasLIDAR){
-      LAI_LIDAR = dGMAP_LIDAR_site$PAI
+  
+  if(PAI_source == "TLS"){
+    if(code_site %in% dGMAP_LIDAR$code_site){
+      dGMAP_LIDAR_site = dGMAP_LIDAR[dGMAP_LIDAR$code_site == code_site, ]
+      if(dGMAP_LIDAR_site$hasLIDAR){
+        LAI_LIDAR = dGMAP_LIDAR_site$PAI
+      }else{
+        warning(paste0("Site ", code_site, " was not LIDARized."))
+      }
     }else{
-      warning(paste0("Site ", code_site, " was not LIDARized."))
+      warning(paste0("Site ", code_site, " is not in LIDAR data."))
     }
-  }else{
-    warning(paste0("Site ", code_site, " is not in LIDAR data."))
+  }else if(PAI_source == "REMOTE"){
+    # TODO
+    dGMAP_LAI_REMOTE_site = dGMAP_LAI_REMOTE[dGMAP_LAI_REMOTE$code_site == code_site, ]
+    if(dim(dGMAP_LAI_REMOTE_site)[1] > 0){
+      LAI_LIDAR = dGMAP_LAI_REMOTE_site$LAImax_mean
+    }else{
+      stop(paste0("Site ", code_site, " is not in LIDAR remote"))
+    }
   }
   
   
