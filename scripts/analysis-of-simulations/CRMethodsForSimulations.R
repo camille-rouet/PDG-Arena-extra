@@ -4099,6 +4099,7 @@ makeTreePeriodTable = function(treeYearTable, periodList){
                             triplet = "",
                             composition = "",
                             period = "",
+                            goodCarrots = FALSE,
                             
                             GPPy_m2_sim = 0,
                             GPPy_abs_sim = 0,
@@ -4132,31 +4133,37 @@ makeTreePeriodTable = function(treeYearTable, periodList){
       nYearsPeriod = period[2] - period[1] + 1
       treeYearTable_tree_periodSubset = subset(treeYearTable_tree, year >= period[1] & year <= period[2])
       
+      goodCarrots = NA
+      if("goodCarrots" %in% names(treeYearTable_tree)){
+        goodCarrots = unique(treeYearTable_tree$goodCarrots)
+      }
+      
       treePeriodTable[index_line, 1] = aTreeGlobalId
       treePeriodTable[index_line, 2] = unique(treeYearTable_tree$code_site)
       treePeriodTable[index_line, 3] = unique(treeYearTable_tree$site)
       treePeriodTable[index_line, 4] = unique(treeYearTable_tree$triplet)
       treePeriodTable[index_line, 5] = unique(treeYearTable_tree$composition)
       treePeriodTable[index_line, 6] = paste0(period, collapse = "_")
+      treePeriodTable[index_line, 7] = goodCarrots
       
-      treePeriodTable[index_line, 7] = sum(treeYearTable_tree_periodSubset$GPPm2_sim) / nYearsPeriod
-      treePeriodTable[index_line, 8] = sum(treeYearTable_tree_periodSubset$GPPabs_sim) / nYearsPeriod
-      treePeriodTable[index_line, 9] = sum(treeYearTable_tree_periodSubset$NPPabs_sim) / nYearsPeriod
-      treePeriodTable[index_line, 10] = sum(treeYearTable_tree_periodSubset$RautoAbs_sim) / nYearsPeriod
+      treePeriodTable[index_line, 8] = sum(treeYearTable_tree_periodSubset$GPPm2_sim) / nYearsPeriod
+      treePeriodTable[index_line, 9] = sum(treeYearTable_tree_periodSubset$GPPabs_sim) / nYearsPeriod
+      treePeriodTable[index_line, 10] = sum(treeYearTable_tree_periodSubset$NPPabs_sim) / nYearsPeriod
+      treePeriodTable[index_line, 11] = sum(treeYearTable_tree_periodSubset$RautoAbs_sim) / nYearsPeriod
       
-      treePeriodTable[index_line, 11] = sum(treeYearTable_tree_periodSubset$BAI_sim) / nYearsPeriod
-      treePeriodTable[index_line, 12] = sum(treeYearTable_tree_periodSubset$BAI_mes) / nYearsPeriod
-      treePeriodTable[index_line, 13] = sum(treeYearTable_tree_periodSubset$WVI_sim) / nYearsPeriod
-      treePeriodTable[index_line, 14] = sum(treeYearTable_tree_periodSubset$WVIo_sim) / nYearsPeriod
-      treePeriodTable[index_line, 15] = sum(treeYearTable_tree_periodSubset$WVI_mes) / nYearsPeriod
-      treePeriodTable[index_line, 16] = sum(treeYearTable_tree_periodSubset$WVIc_mes) / nYearsPeriod
-      treePeriodTable[index_line, 17] = unique(treeYearTable_tree$species)
-      treePeriodTable[index_line, 18] = unique(treeYearTable_tree$dbhFinal)
-      treePeriodTable[index_line, 19] = unique(treeYearTable_tree$hauteurFinal)
-      treePeriodTable[index_line, 20] = mean(treeYearTable_tree_periodSubset$dbhRetro)
-      treePeriodTable[index_line, 21] = mean(treeYearTable_tree_periodSubset$hauteurRetro)
-      treePeriodTable[index_line, 22] = unique(treeYearTable_tree$hcb)
-      treePeriodTable[index_line, 23] = unique(treeYearTable_tree$span)
+      treePeriodTable[index_line, 12] = sum(treeYearTable_tree_periodSubset$BAI_sim) / nYearsPeriod
+      treePeriodTable[index_line, 13] = sum(treeYearTable_tree_periodSubset$BAI_mes) / nYearsPeriod
+      treePeriodTable[index_line, 14] = sum(treeYearTable_tree_periodSubset$WVI_sim) / nYearsPeriod
+      treePeriodTable[index_line, 15] = sum(treeYearTable_tree_periodSubset$WVIo_sim) / nYearsPeriod
+      treePeriodTable[index_line, 16] = sum(treeYearTable_tree_periodSubset$WVI_mes) / nYearsPeriod
+      treePeriodTable[index_line, 17] = sum(treeYearTable_tree_periodSubset$WVIc_mes) / nYearsPeriod
+      treePeriodTable[index_line, 18] = unique(treeYearTable_tree$species)
+      treePeriodTable[index_line, 19] = unique(treeYearTable_tree$dbhFinal)
+      treePeriodTable[index_line, 20] = unique(treeYearTable_tree$hauteurFinal)
+      treePeriodTable[index_line, 21] = mean(treeYearTable_tree_periodSubset$dbhRetro)
+      treePeriodTable[index_line, 22] = mean(treeYearTable_tree_periodSubset$hauteurRetro)
+      treePeriodTable[index_line, 23] = unique(treeYearTable_tree$hcb)
+      treePeriodTable[index_line, 24] = unique(treeYearTable_tree$span)
       
       index_line = index_line + 1
       

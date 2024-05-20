@@ -408,7 +408,7 @@ warning(paste0("These trees were measured but not simulated in irregdemo plurisp
 dGMAP_horsprod_simulatedTrees = subset(dGMAP_horsprod, treeGlobalId %in% treeid_simulated)
 
 # tree year
-treeYearTable_GMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod_simulatedTrees, years = 1993:2013)
+treeYearTable_GMAP = makeGMAP_TreeYearTable(dGMAP_dendro, dGMAP_horsprod_simulatedTrees, years = 1995:2013)
 
 # all should be FALSE
 table(is.na(treeYearTable_GMAP$BAI_mes))
@@ -876,7 +876,11 @@ suffix1 = "_E0"
 suffix2 = "_CAST"
 simulationComparaisonTable = get(paste0("standPeriodTable", suffix1))
 variableOfInterest = "GPPy_m2_sim"
-variableList = c("BAIy_sim", "BAIy_m2_sim", "BAIy_m2_sim", "WVIy_sim", "WVIy_m2_mes", "WVIy_m2_sim", "GPPy_abs_sim", "GPPy_m2_sim", "NPPy_abs_sim", "NPPy_m2_sim", "Rautoy_abs_sim", 
+# it is important to list all variables that may differ between simulation mode 
+variableList = c("BAIy_sim", "BAIy_mes", "BAIy_m2_sim", "BAIy_m2_mes", 
+                 "WVIy_sim", "WVIy_mes", "WVIy_m2_sim", "WVIy_m2_mes",
+                 "WVIoy_sim", "WVIcy_mes", "WVIoy_m2_sim", "WVIcy_m2_mes",
+                 "GPPy_abs_sim", "GPPy_m2_sim", "NPPy_abs_sim", "NPPy_m2_sim", "Rautoy_abs_sim", 
                  "vegAbso_MJm2Y", "vegAbsorbance", "vegAbsoPAR_MJm2Y", "vegAbsorbancePAR", 
                  "REWmin", "RU_level_min", "RU_shortage_max", "transpiration")
 
@@ -1215,6 +1219,7 @@ wilcox.test(lollypopTable$vegAbsorbance_E0, lollypopTable$vegAbsorbance_E1A, pai
 
 # 2024.04.26 Check height ~ dbh relationship
 folderPlot = paste0("local_plots/", currentSimulation, "height_dbh/")
+dGMAP_horsprod_simulatedTrees$dbh = dGMAP_horsprod_simulatedTrees$circonference / pi
 
 # 
 ggplot(dGMAP_horsprod_simulatedTrees, aes(x = dbh, y = htot, color = site)) + geom_point() + facet_wrap( essence ~ site ) + ylim(c(0, NA)) + xlim(c(0, NA)) + guides(color = F)
@@ -1250,3 +1255,21 @@ for(a_species in unique(dGMAP_horsprod_simulatedTrees$essence)){
   
   }
 }
+
+
+
+# 2024-06-20 Individual growth sim vs mes ----
+
+
+targetPeriod = "1996_2013"
+ggplot(subset(treePeriodTable_E2, period == targetPeriod & goodCarrots), 
+       aes(x = log10(WVIcy_mes), y = log10(WVIoy_sim), color = species)) + 
+  geom_abline(slope = 1, alpha = 0.25) +
+  geom_smooth(method = "lm") + geom_point() + 
+  facet_grid(composition ~ site) + xlim(c(0,NA)) + ylim(c(0, NA))
+
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
+saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI-log_tree_period_compo_site"))
+
+
+
