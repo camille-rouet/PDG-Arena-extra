@@ -4249,8 +4249,13 @@ makeStandPeriodTable = function(standYearTable, periodList){
 
 
 # from a stand-period table, give a set of coefficients of correlation between two variable of a table
-getComparisonCoefficient = function(table, nameVar1, nameVar2, coefficientList = c("correlation", "r2", "1-r2", "RMSE", "MAPE")){
+getComparisonCoefficient = function(table, nameVar1, nameVar2, coefficientList = c("correlation", "r2", "1-r2", "RMSE", "MAPE"), onlog = FALSE){
 
+  if(onlog){
+    table[[nameVar1]] = log10(table[[nameVar1]])
+    table[[nameVar2]] = log10(table[[nameVar2]])
+  }
+  
   res = NULL
   if("correlation" %in% coefficientList){
     res = tibble(test = "correlation", 

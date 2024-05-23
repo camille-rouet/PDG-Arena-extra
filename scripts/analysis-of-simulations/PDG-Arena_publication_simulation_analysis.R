@@ -511,10 +511,13 @@ removeUnits = function(a_standPeriodTable){
 
 
 
-# add some columns for a table
-addNewColumns = function(a_standPeriodTable, simuList_st){
+# add some columns for a table and their units
+# simuList_st should be a reference simulation (only values independant on simulation mode will be extracted)
+addNewColumnsAndUnits = function(a_standPeriodTable, simuList_st){
   a_standPeriodTable$code_triplet_cut = sapply(a_standPeriodTable$triplet, FUN = function(x){splitted = strsplit(x, split = "_")[[1]] ; return(paste0(splitted[-1], collapse =  "."))})
   a_standPeriodTable$code_site_cut = sapply(a_standPeriodTable$code_site, FUN = function(x){splitted = strsplit(x, split = "_")[[1]] ; return(paste0(splitted[-1], collapse =  "."))})
+  
+  # add LAI, gha, incident radiation and stand area
   a_standPeriodTable$LAI = 0
   a_standPeriodTable$GhaInit = 0
   a_standPeriodTable$incident_yearlyMJm2 = 0
@@ -531,64 +534,53 @@ addNewColumns = function(a_standPeriodTable, simuList_st){
     
   }
   
-  # for(col in names(a_standPeriodTable)[sapply(a_standPeriodTable[1, ], is.numeric)]){
-  #   a_standPeriodTable[[col]] = as.vector(a_standPeriodTable[[col]])
-  # }
-  
-  # set units
+  # Set units for existing variables
   for(col in c("BAIy_sim", "BAIy_mes")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm2/yr)
   }
   
-  # set units
   for(col in c("WVIy_sim", "WVIy_mes")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], m3/yr)
   }
   
-  # set units
   for(col in c("WVIoy_sim", "WVIcy_mes")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm3/yr)
   }
   
-  # set units
   for(col in c("GPPy_abs_sim", "NPPy_abs_sim", "Rautoy_abs_sim")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], g/yr)
   }
   
-  # set units
   for(col in c("standArea_m2")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], m2)
   }
   
-  # NEW VARIABLES
-  a_standPeriodTable$WVIy_m2_mes = a_standPeriodTable$WVIy_mes / a_standPeriodTable$standArea_m2
-  a_standPeriodTable$WVIy_m2_sim = a_standPeriodTable$WVIy_sim / a_standPeriodTable$standArea_m2
-  a_standPeriodTable$WVIcy_m2_mes = a_standPeriodTable$WVIcy_mes / a_standPeriodTable$standArea_m2 # measured corrected
-  a_standPeriodTable$WVIoy_m2_sim = a_standPeriodTable$WVIoy_sim / a_standPeriodTable$standArea_m2 # simulated original
+  # NEW RESULTS VARIABLES AND THEIR UNITS
   a_standPeriodTable$GPPy_m2_sim = a_standPeriodTable$GPPy_abs_sim / a_standPeriodTable$standArea_m2
   a_standPeriodTable$NPPy_m2_sim = a_standPeriodTable$NPPy_abs_sim / a_standPeriodTable$standArea_m2
   a_standPeriodTable$BAIy_m2_mes = a_standPeriodTable$BAIy_mes / a_standPeriodTable$standArea_m2
   a_standPeriodTable$BAIy_m2_sim = a_standPeriodTable$BAIy_sim / a_standPeriodTable$standArea_m2
+  a_standPeriodTable$WVIy_m2_mes = a_standPeriodTable$WVIy_mes / a_standPeriodTable$standArea_m2
+  a_standPeriodTable$WVIy_m2_sim = a_standPeriodTable$WVIy_sim / a_standPeriodTable$standArea_m2
+  a_standPeriodTable$WVIcy_m2_mes = a_standPeriodTable$WVIcy_mes / a_standPeriodTable$standArea_m2 # measured corrected
+  a_standPeriodTable$WVIoy_m2_sim = a_standPeriodTable$WVIoy_sim / a_standPeriodTable$standArea_m2 # simulated original
   
   # set units
   for(col in c("GPPy_m2_sim", "NPPy_m2_sim")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], g/m2/yr) # conversion
   }
   
+  for(col in c("BAIy_m2_mes", "BAIy_m2_sim")){
+    a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm2/m2/yr)
+  }
   
-  # set new units
+  
   for(col in c("WVIy_m2_mes", "WVIy_m2_sim")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], m3/m2/yr)
   }
   
-  # set new units
   for(col in c("WVIcy_m2_mes", "WVIoy_m2_sim")){
     a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm3/m2/yr)
-  }
-  
-  # set new units
-  for(col in c("BAIy_m2_mes", "BAIy_m2_sim")){
-    a_standPeriodTable[[col]] = set_units(a_standPeriodTable[[col]], cm2/m2/yr)
   }
   
   return(a_standPeriodTable)
@@ -606,17 +598,17 @@ addNewColumns = function(a_standPeriodTable, simuList_st){
 
 
 # Add columns for stand-period table and add units
-standPeriodTable_E2 = addNewColumns(standPeriodTable_E2, simuListIrregdemoPlurisp_st)
+standPeriodTable_E2 = addNewColumnsAndUnits(standPeriodTable_E2, simuListIrregdemoPlurisp_st)
 if(import_irreg_demo_monosp){
-  standPeriodTable_E1B = addNewColumns(standPeriodTable_E1B, simuListIrregdemoPlurisp_st)
-  standYearTable_E1B_fromStand = addNewColumns(standYearTable_E1B_fromStand, simuListIrregdemoPlurisp_st)
+  standPeriodTable_E1B = addNewColumnsAndUnits(standPeriodTable_E1B, simuListIrregdemoPlurisp_st)
+  standYearTable_E1B_fromStand = addNewColumnsAndUnits(standYearTable_E1B_fromStand, simuListIrregdemoPlurisp_st)
 }
-standPeriodTable_E1A = addNewColumns(standPeriodTable_E1A, simuListIrregdemoPlurisp_st)
-standPeriodTable_E0 = addNewColumns(standPeriodTable_E0, simuListIrregdemoPlurisp_st)
+standPeriodTable_E1A = addNewColumnsAndUnits(standPeriodTable_E1A, simuListIrregdemoPlurisp_st)
+standPeriodTable_E0 = addNewColumnsAndUnits(standPeriodTable_E0, simuListIrregdemoPlurisp_st)
 if(import_CAST)
-  standPeriodTable_CAST = addNewColumns(standPeriodTable_CAST, simuListIrregdemoPlurisp_st)
-standPeriodTable_E0PRELI = addNewColumns(standPeriodTable_E0PRELI, simuListIrregdemoPlurisp_st)
-standPeriodTable_GMAP = addNewColumns(standPeriodTable_GMAP, simuListIrregdemoPlurisp_st)
+  standPeriodTable_CAST = addNewColumnsAndUnits(standPeriodTable_CAST, simuListIrregdemoPlurisp_st)
+standPeriodTable_E0PRELI = addNewColumnsAndUnits(standPeriodTable_E0PRELI, simuListIrregdemoPlurisp_st)
+standPeriodTable_GMAP = addNewColumnsAndUnits(standPeriodTable_GMAP, simuListIrregdemoPlurisp_st)
 
 
 
@@ -634,7 +626,36 @@ standPeriodTable_GMAP = addNewColumns(standPeriodTable_GMAP, simuListIrregdemoPl
 # standPeriodTable_E0PRELI = changeUnit_TableList(standPeriodTable_E0PRELI, simuListIrregdemoPlurisp_st)
 # standPeriodTable_GMAP = changeUnit_TableList(standPeriodTable_GMAP, simuListIrregdemoPlurisp_st)
 
+# [\CONVERSION]
 
+
+
+# Remove outliers ----
+
+outlierList = c("bg_haut_sp_2")
+# outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
+# outlierList = c("bg_haut_sp_2", "bg_bas_sp_4", "bg_bas_sp_5")
+
+if(length(outlierList)>0){
+  
+  treeYearTable_E2 = subset(treeYearTable_E2, !code_site %in% outlierList)
+  treeYearTable_GMAP = subset(treeYearTable_GMAP, !code_site %in% outlierList)
+  
+  treePeriodTable_E2 = subset(treePeriodTable_E2, !code_site %in% outlierList)
+  treePeriodTable_GMAP = subset(treePeriodTable_GMAP, !code_site %in% outlierList)
+  
+  standYearTable_CAST = subset(standYearTable_CAST, !code_site %in% outlierList)
+  standYearTable_E0 = subset(standYearTable_E0, !code_site %in% outlierList)
+  standYearTable_E1A = subset(standYearTable_E1A, !code_site %in% outlierList)
+  standYearTable_E2 = subset(standYearTable_E2, !code_site %in% outlierList)
+  standYearTable_GMAP = subset(standYearTable_GMAP, !code_site %in% outlierList)
+  
+  standPeriodTable_CAST = subset(standPeriodTable_CAST, !code_site %in% outlierList)
+  standPeriodTable_E0 = subset(standPeriodTable_E0, !code_site %in% outlierList)
+  standPeriodTable_E1A = subset(standPeriodTable_E1A, !code_site %in% outlierList)
+  standPeriodTable_E2 = subset(standPeriodTable_E2, !code_site %in% outlierList)
+  standPeriodTable_GMAP = subset(standPeriodTable_GMAP, !code_site %in% outlierList)
+}
 
 
 
@@ -650,8 +671,8 @@ title_list = list(ggtitle("st_per_E2"), ggtitle("st_per_E1A"),
                   #, ggtitle("st_per_E0PRELI")
                   # , ggtitle("st_per_E0PRELIbis")
 )
-standPeriodTable_list = list(standPeriodTable_E2, standPeriodTable_E1A, 
-                             standPeriodTable_E0
+standPeriodTable_list = list(st_per_E2 = standPeriodTable_E2, st_per_E1A = standPeriodTable_E1A, 
+                             st_per_E0 = standPeriodTable_E0
                              #, standPeriodTable_E0PRELI
                              # , standPeriodTable_E0PRELIbis
 )
@@ -671,7 +692,6 @@ if(import_CAST){
 
 
 
-# [\CONVERSION]
 
 # SYNTHESE
 # We have table with simulated and measured Wood Volume Increment for :
@@ -706,7 +726,7 @@ yValMax = max(xValMax, yValMax)
 coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
 
 size = 4
-folderPlot = paste0("local_plots/", currentSimulation, "divers/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/1outlier/")
 for(i in 1:length(standPeriodTable_list)){
   a_standPeriodTable = standPeriodTable_list[[i]]
   a_title = title_list[[i]]
@@ -725,7 +745,7 @@ for(i in 1:length(standPeriodTable_list)){
     scale_shape_manual(name = "Site",
                        labels = c("Bauges", "Vercors", "Ventoux"),
                        values = c(15,19,17)) +
-    annotate("text", x=1.3125, y=1.375, label= "1:1", size = 6)
+    annotate("text", x= yValMax *0.85, y=yValMax*0.9, label= "1:1", size = 6)
   
   saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI2", "_", a_title$title))
 }
@@ -1129,19 +1149,20 @@ lollypopTable_long$simu = str_match(lollypopTable_long$variable, pattern = "E0|E
 # BOXPLOT ON PHYSIOLOGICAL VARIABLES
 
 # rename simu set
-lollypopTable_long$simu[lollypopTable_long$simu == "E0"] = "RN"
-lollypopTable_long$simu[lollypopTable_long$simu == "E1A"] = "RS"
+lollypopTable_long$simu[lollypopTable_long$simu == "E0"] = "RM"
+lollypopTable_long$simu[lollypopTable_long$simu == "E1A"] = "R"
 lollypopTable_long$simu[lollypopTable_long$simu == "E2"] = "O"
+lollypopTable_long$simu[lollypopTable_long$simu == "CAST"] = "CAST"
 
 # reorder simu
-lollypopTable_long$simu = factor(lollypopTable_long$simu, levels = c('RN', 'RS', 'O'),ordered = TRUE)
+lollypopTable_long$simu = factor(lollypopTable_long$simu, levels = c('RM', 'R', 'O', "CAST"),ordered = TRUE)
 
 
 
 
 # which pair to show p-value?
-stat_comparison_pairs = list( c("E0", "E1A"), c("E0", "E2"), c("E1A", "E2") )
-stat_comparison_pairs = list( c("RN", "RS"), c("RN", "O"), c("RS", "O") )
+# stat_comparison_pairs = list( c("E0", "E1A"), c("E0", "E2"), c("E1A", "E2") )
+stat_comparison_pairs = list( c("RM", "R"), c("RM", "O"), c("R", "O") )
 
 
 # List of plotable variables: 
@@ -1152,7 +1173,7 @@ stat_comparison_pairs = list( c("RN", "RS"), c("RN", "O"), c("RS", "O") )
 
 # Choice of variables to plot:
 variablesPlot = c(
-  "transpiration",
+  # "transpiration",
   # "REWmin", 
   # "RU_level_min",
   "GPPy_m2_sim",
@@ -1162,7 +1183,7 @@ variablesPlot = c(
 
 # Plot boxplot
 ggplot(subset(lollypopTable_long, variable_short %in% variablesPlot &
-                grepl(simu, pattern = "RN|RS|O")), 
+                grepl(simu, pattern = "RM|R|O")), 
        aes(x = simu, y = value, fill = simu)) + 
   geom_boxplot() + 
   facet_wrap(. ~ variable_short, scales="free", 
@@ -1187,7 +1208,8 @@ ggplot(subset(lollypopTable_long, variable_short %in% variablesPlot &
 
 
 
-saveLastGgPlot(folderPlot, plot_height = 720, ratio =2, scale = 0.7, fileSuffix = ".pdf")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/1outlier/")
+saveLastGgPlot(fileName = "VARIABLES_per_mode", folderPlot, plot_height = 720, ratio = 3/2, scale = 0.7, fileSuffix = ".pdf")
 
 
 
@@ -1260,16 +1282,115 @@ for(a_species in unique(dGMAP_horsprod_simulatedTrees$essence)){
 
 # 2024-06-20 Individual growth sim vs mes ----
 
-
 targetPeriod = "1996_2013"
-ggplot(subset(treePeriodTable_E2, period == targetPeriod & goodCarrots), 
+subTreePeriodTable_E2 = subset(treePeriodTable_E2, period == targetPeriod & goodCarrots)
+# keep only positive values (for log transformation)
+subTreePeriodTable_E2_positive = subset(subTreePeriodTable_E2, WVIoy_sim > 0 )
+
+# global individual r2 computed with correlation
+cor(subTreePeriodTable_E2$WVIcy_mes, subTreePeriodTable_E2$WVIoy_sim)**2
+cor(log10(subTreePeriodTable_E2_positive$WVIcy_mes), log10(subTreePeriodTable_E2_positive$WVIoy_sim))**2
+
+# global individual r2 computed with linear model
+lm_sim_mes = lm(data = subTreePeriodTable_E2, WVIoy_sim ~ WVIcy_mes)
+sum_lm = summary(lm_sim_mes)
+sum_lm$r.squared
+
+lm_log_sim_mes = lm(data = subTreePeriodTable_E2_positive, log10(WVIoy_sim) ~ log10(WVIcy_mes))
+sum_lm_log = summary(lm_log_sim_mes)
+sum_lm_log$r.squared
+
+
+# Create a table with r2 per site x composition x species
+sites = unique(subTreePeriodTable_E2$site)
+compositions = unique(subTreePeriodTable_E2$composition)
+allspecies = unique(subTreePeriodTable_E2$species)
+stat_table = tibble(site = "na", composition = "na", species = "na", 
+                    intercept = 0, slope = 0, r = 0, r2 = 0, MAPE = 0,
+                    intercept_on_log = 0, slope_on_log = 0, r_on_log = 0, r2_on_log = 0, MAPE_on_log = 0,
+                    .rows = length(sites) * length(compositions) * length(allspecies))
+
+i = 1
+for(a_site in sites){
+  for(a_composition in compositions){
+    for(a_species in allspecies){
+      statset_subTreePeriodTable_E2 = subset(subTreePeriodTable_E2, site == a_site & composition == a_composition & species == a_species)
+      statset_subTreePeriodTable_E2_positive = subset(subTreePeriodTable_E2_positive, site == a_site & composition == a_composition & species == a_species)
+      
+      stat_table[i, ]$site = a_site
+      stat_table[i, ]$composition = a_composition
+      stat_table[i, ]$species = a_species
+      
+      coefs = getComparisonCoefficient(statset_subTreePeriodTable_E2, nameVar1 = "WVIcy_mes", nameVar2 = "WVIoy_sim")
+      coefs_on_log = getComparisonCoefficient(statset_subTreePeriodTable_E2_positive, nameVar1 = "WVIcy_mes", nameVar2 = "WVIoy_sim", onlog = TRUE)
+      
+      if(dim(statset_subTreePeriodTable_E2)[1] > 0){
+        lm_sim_mes = lm(data = statset_subTreePeriodTable_E2, WVIoy_sim ~ WVIcy_mes)
+        lm_log_sim_mes = lm(data = statset_subTreePeriodTable_E2_positive, log10(WVIoy_sim) ~ log10(WVIcy_mes))
+        
+        stat_table[i, ]$intercept = lm_sim_mes$coefficients[1]
+        stat_table[i, ]$slope = lm_sim_mes$coefficients[2]
+        
+        stat_table[i, ]$intercept_on_log = lm_log_sim_mes$coefficients[1]
+        stat_table[i, ]$slope_on_log = lm_log_sim_mes$coefficients[2]
+        
+        stat_table[i, ]$r = coefs$PDGvsMES[coefs$test == "correlation"]
+        stat_table[i, ]$r2 = coefs$PDGvsMES[coefs$test == "r2"]
+        stat_table[i, ]$MAPE = coefs$PDGvsMES[coefs$test == "MAPE"]
+        stat_table[i, ]$r_on_log = coefs_on_log$PDGvsMES[coefs_on_log$test == "correlation"]
+        stat_table[i, ]$r2_on_log = coefs_on_log$PDGvsMES[coefs_on_log$test == "r2"]
+        stat_table[i, ]$MAPE_on_log = coefs_on_log$PDGvsMES[coefs_on_log$test == "MAPE"]
+        
+      }
+      
+      i = i + 1
+    }
+  }
+}
+
+stat_table$ignore = (stat_table$composition == "sp" & stat_table$species == "hetre") | 
+  (stat_table$composition == "ph" & stat_table$species == "sapin")
+
+# plot of r2 and r2_on_log
+ggplot(stat_table[!stat_table$ignore, ], aes(r2, r2_on_log)) + geom_point() + xlim(c(0, NA)) + ylim(c(0, NA)) + geom_abline(slope = 1, alpha = 0.2)
+
+# plot of MAPE and MAPE_on_log
+ggplot(stat_table[!stat_table$ignore, ], aes(MAPE, MAPE_on_log, color = composition, shape = site)) + geom_point() + xlim(c(0, NA)) + ylim(c(0, NA)) + geom_abline(slope = 1, alpha = 0.2)
+
+
+
+# plot with fit and r2
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
+
+textSize = 4
+ggplot(subTreePeriodTable_E2, 
+       aes(x = WVIcy_mes, y = WVIoy_sim, color = species)) + 
+  geom_abline(slope = 1, alpha = 0.25) +
+  geom_smooth(method = "lm") + geom_point() +
+  facet_grid(composition ~ site) +
+  geom_text(data = stat_table[!stat_table$ignore, ], 
+            aes(x = 120000, y = 120000 - 10000 *(species == "hetre"), 
+                label = paste0("r2 = ", round(r2, 2), " [y = ", round(slope,2), "*x " , ifelse(sign(intercept) >= 0, "+ ", "- "), signif(abs(intercept),2), "]")),
+            size = textSize) +
+  xlim(c(0,NA)) + ylim(c(0, 120000))
+
+saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI_indiv_period_compo_site_species"))
+
+
+
+ggplot(subTreePeriodTable_E2_positive, 
        aes(x = log10(WVIcy_mes), y = log10(WVIoy_sim), color = species)) + 
   geom_abline(slope = 1, alpha = 0.25) +
-  geom_smooth(method = "lm") + geom_point() + 
-  facet_grid(composition ~ site) + xlim(c(0,NA)) + ylim(c(0, NA))
+  geom_smooth(method = "lm") +
+  geom_point() +
+  facet_grid(composition ~ site) +
+  geom_text(data = stat_table[!stat_table$ignore, ],
+            aes(x = 1.5, y = 4.50 - 0.5 *(species == "hetre"), 
+                label = paste0("r2 = ", round(r2_on_log, 2), " [y = ", round(slope_on_log,2), "*x " , ifelse(sign(intercept_on_log) >= 0, "+ ", "- "), signif(abs(intercept_on_log),2), "]")),
+            size = textSize) +
+  xlim(c(0,NA)) + ylim(c(0, 5))
 
-folderPlot = paste0("local_plots/", currentSimulation, "divers/")
-saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI-log_tree_period_compo_site"))
+saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI_log_individ_period_compo_site_species"))
 
 
 
