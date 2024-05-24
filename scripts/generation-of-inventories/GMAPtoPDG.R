@@ -27,7 +27,7 @@ outputInConsole = FALSE # if TRUE, output is redirected in console instead of in
 # outputInConsole = TRUE # to comment
 
 # folder for writing inventories
-outputInventoryFolder = "inventories/2024-05-06_GMAP_publication/"
+outputInventoryFolder = "inventories/2024-05-06_GMAP_publication_noslope/"
 
 # standard = trees are located and defined based on the GMAP inventory, output is one (eventually mixed) plot
 # regdemo_monosp = trees are all of the same (mean) age and (quadratic mean) dbh and they are located on a regular basis, two monospecific plot are made
@@ -41,7 +41,7 @@ inventoryMode = "allbutE1B"
 useSpeciesLAIduringRegularization = TRUE
 
 # Put stand to zero slope
-forceNoSlope = FALSE
+forceNoSlope = TRUE
 
 # nTree per stand for regdemo mode
 nTree_regularization = 36

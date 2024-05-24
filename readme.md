@@ -48,6 +48,11 @@ Here are the files used in this publication:
 
 — It contains simulation meta-information such as software version
 
+> simulation-data/paper-PDG-Arena/LAI
+
+— It contains the values of LAI used in the simulations
+
+
 
 ## License
 This work © 2024 by Camille Rouet is licensed under [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/).
