@@ -1239,48 +1239,76 @@ wilcox.test(lollypopTable$vegAbsorbance_E0, lollypopTable$vegAbsorbance_E1A, pai
 
 
 
-# 2024.04.26 Check height ~ dbh relationship
+# APPENDIX Height-DBH relationship ----
+
 folderPlot = paste0("local_plots/", currentSimulation, "height_dbh/")
 dGMAP_horsprod_simulatedTrees$dbh = dGMAP_horsprod_simulatedTrees$circonference / pi
 
-# 
-ggplot(dGMAP_horsprod_simulatedTrees, aes(x = dbh, y = htot, color = site)) + geom_point() + facet_wrap( essence ~ site ) + ylim(c(0, NA)) + xlim(c(0, NA)) + guides(color = F)
-saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("height_dbh"))
 
-ggplot(dGMAP_horsprod_simulatedTrees, aes(x = log(dbh), y = log(htot), color = site)) + geom_point() + geom_smooth(method = "lm") + facet_wrap( essence ~ site ) + ylim(c(0, NA)) + xlim(c(0, NA))+ guides(color = F)
-saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("logheight_logdbh"))
+# Create a table with intercept, slope and r2 per site and species
+sites = unique(dGMAP_horsprod_simulatedTrees$site)
+allspecies = unique(dGMAP_horsprod_simulatedTrees$essence)
+stat_table = tibble(site = "na", essence = "na", 
+                    aintercept = 0, aslope = 0, r2 = 0,
+                    .rows = length(sites) * length(allspecies))
 
-
-lm_table = tibble(essence = "", site = "", intercept = 0, slope = 0, .rows = length(unique(dGMAP_horsprod_simulatedTrees$essence)) * length(unique(dGMAP_horsprod_simulatedTrees$site)))
 i = 1
+for(a_site in sites){
+    for(a_species in allspecies){
+      statset = subset(dGMAP_horsprod_simulatedTrees, site == a_site & essence == a_species)
 
-for(a_species in unique(dGMAP_horsprod_simulatedTrees$essence)){
-  for(a_site in unique(dGMAP_horsprod_simulatedTrees$site)){
-    lm1 = lm(data = dGMAP_horsprod_simulatedTrees, 
-             subset = essence == a_species & site == a_site,
-             formula = log(htot) ~ log(dbh))
-    lm_table[i, ]$essence = a_species
-    lm_table[i, ]$site = a_site
-    intercept = lm1$coefficients["(Intercept)"]
-    slope = lm1$coefficients["log(dbh)"]
-    lm_table[i, ]$intercept = intercept
-    lm_table[i, ]$slope = slope
-    i = i +1
-    
-    ggplot(subset(dGMAP_horsprod_simulatedTrees, essence == a_species & site == a_site, color = site), 
-           aes(x = dbh, y = htot)) + geom_point() +
-      # geom_smooth(method = "lm", formula = y ~ log(x)) + 
-      ylim(c(0, max(dGMAP_horsprod_simulatedTrees$htot))) + xlim(c(0, max(dGMAP_horsprod_simulatedTrees$dbh))) +
-      geom_function( fun = function(x) exp(intercept + slope * log(x)))
-    
-    saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("height_dbh_", a_species, "_", a_site))
-  
+      stat_table[i, ]$site = a_site
+      stat_table[i, ]$essence = a_species
+      
+      if(dim(statset)[1] > 0){
+        mylm = lm(data = statset, log10(htot) ~ log10(dbh))
+        sum_mylm = summary(mylm)
+        
+        stat_table[i, ]$aintercept = mylm$coefficients[1]
+        stat_table[i, ]$aslope = mylm$coefficients[2]
+        
+        stat_table[i, ]$r2 = sum_mylm$r.squared
+        
+      }
+      
+      i = i + 1
   }
 }
 
+# Print log(height) ~ log(DBH) plot
+facet_names <- c(
+  bg = "Bauges",
+  vl = "Vercors",
+  vtx = "Ventoux",
+  hetre = "Beech",
+  sapin = "Fir"
+)
+
+ggplot(dGMAP_horsprod_simulatedTrees, aes(x = (dbh), y = (htot))) +
+  geom_abline(data = stat_table, aes(intercept = aintercept, slope = aslope, color = "red"))+
+  geom_point(size = 0.75) + 
+  facet_wrap( essence ~ site, labeller = as_labeller(facet_names)) +
+  xlab("DBH (cm)") + ylab("Height (m)")+
+  geom_text(data = stat_table, 
+            aes(x = 15, y = 38, 
+                label = paste0("r2 = ", round(r2, 2))),
+                # label = paste0("r2 = ", round(r2, 2), " [log(y) = ", round(aslope,2), "* log(x) " , ifelse(sign(aintercept) >= 0, "+ ", "- "), signif(abs(aintercept),2), "]")),
+            size = 3.5)  +
+  guides(color = F)+
+  scale_y_continuous(trans= "log10") +
+  scale_x_continuous(trans= "log10")
+
+saveLastGgPlot(folderPlot, plot_width = 960, ratio = 1.25, scale = 0.8, fileName = paste0("logheight_logdbh3"))
 
 
-# 2024-06-20 Individual growth sim vs mes ----
+
+
+
+
+
+
+
+# 2024.05.20 Individual growth sim vs mes ----
 
 targetPeriod = "1996_2013"
 subTreePeriodTable_E2 = subset(treePeriodTable_E2, period == targetPeriod & goodCarrots)
@@ -1391,6 +1419,4 @@ ggplot(subTreePeriodTable_E2_positive,
   xlim(c(0,NA)) + ylim(c(0, 5))
 
 saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI_log_individ_period_compo_site_species"))
-
-
 

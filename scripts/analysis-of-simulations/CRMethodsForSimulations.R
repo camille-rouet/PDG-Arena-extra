@@ -3723,7 +3723,7 @@ makeGMAP_TreeYearTable = function(dGMAP_dendro, dGMAP_horsprod, years){
   
   
   # Computed passed height
-  # Passed height is inferred using a log(height) = intercept + slope log(dbh) equation fitted on measureds (aka, data at the year of measurement)
+  # Passed height is inferred using a log(height) = intercept + slope log(dbh) equation fitted on measured height and dbh (aka, data at the year of measurement)
   lm_table = tibble(essence = "", site = "", intercept = 0, slope = 0, 
                     .rows = length(unique(dGMAP_horsprod$essence)) * length(unique(dGMAP_horsprod$site)))
   i = 1
