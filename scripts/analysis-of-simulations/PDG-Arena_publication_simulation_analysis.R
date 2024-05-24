@@ -726,7 +726,7 @@ yValMax = max(xValMax, yValMax)
 coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
 
 size = 4
-folderPlot = paste0("local_plots/", currentSimulation, "divers/1outlier/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 for(i in 1:length(standPeriodTable_list)){
   a_standPeriodTable = standPeriodTable_list[[i]]
   a_title = title_list[[i]]
@@ -735,7 +735,7 @@ for(i in 1:length(standPeriodTable_list)){
   ) + 
     # a_title +
     # facet_grid( . ~ composition) +
-    geom_text_repel(size = 3.5, alpha = 0.7) +
+    # geom_text_repel(size = 3.5, alpha = 0.7) +
     geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
     coord_limits+
     ylab("WVI simulated")+
@@ -747,7 +747,7 @@ for(i in 1:length(standPeriodTable_list)){
                        values = c(15,19,17)) +
     annotate("text", x= yValMax *0.85, y=yValMax*0.9, label= "1:1", size = 6)
   
-  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI2", "_", a_title$title))
+  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI2_nolabel", "_", a_title$title))
 }
 
 
@@ -981,8 +981,8 @@ coefficients_list = c("r2", "MAPE")
 stat_list = list()
 index = 1
 for(a_standPeriodTable in standPeriodTable_list){
-  # subTable = subset(a_standPeriodTable, period == "1996_2013")
-  subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_haut_sp_2"))
+  subTable = subset(a_standPeriodTable, period == "1996_2013")
+  # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_haut_sp_2"))
   # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_bas_sp_4", "bg_haut_sp_2"))
   # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_bas_sp_4", "bg_bas_sp_5", "bg_haut_sp_2"))
   stat_list[[suffix_list[index]]] = getComparisonCoefficientPerSiteAndComposition(
