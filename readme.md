@@ -48,7 +48,7 @@ Here are the files used in this publication:
 
 — It contains simulation meta-information such as software version
 
-> simulation-data/paper-PDG-Arena/LAI
+> simulation-data/paper-PDG-Arena/LAI/
 
 — It contains the values of LAI used in the simulations
 
