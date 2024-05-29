@@ -73,8 +73,8 @@ import_irreg_demo_monosp = FALSE # import E1B mode ?
 import_CAST = TRUE
 keepFilter = ""
 
-currentSimulation = "2024-05-07_GMAP_publication/"
-currentSimulation = "2023-12-15_goodHeightGoodAlignment/"
+currentSimulation = "2024-05-07_GMAP_publication_noslope/"
+# currentSimulation = "2023-12-15_goodHeightGoodAlignment/"
 simulationFolderGlobal = paste0(ifelse(grepl(currentSimulation, pattern = "2023"), "2023", "2024"), 
                                 "_simu_article/", currentSimulation)
 folderPlot = paste0("local_plots/", currentSimulation, "divers/")
@@ -632,8 +632,9 @@ standPeriodTable_GMAP = addNewColumnsAndUnits(standPeriodTable_GMAP, simuListIrr
 
 # Remove outliers ----
 
-outlierList = c("bg_haut_sp_2")
-# outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
+# outlierList = c()
+# outlierList = c("bg_haut_sp_2")
+outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
 # outlierList = c("bg_haut_sp_2", "bg_bas_sp_4", "bg_bas_sp_5")
 
 if(length(outlierList)>0){
@@ -792,17 +793,17 @@ for(i in 1:length(standPeriodTable_list)){
 
 # 3.1 CORRELATION MATRIX -----------------------------------------------------------
 # (Part 3.1) Correlations between modelling situations
-listOfTables = list(subset(standPeriodTable_CAST, period == "1996_2013"),
-                    subset(standPeriodTable_E0, period == "1996_2013"),
-                    subset(standPeriodTable_E1A, period == "1996_2013"),
-                    # subset(standPeriodTable_E1B, period == "1996_2013"),
-                    subset(standPeriodTable_E2, period == "1996_2013"))
+listOfTables = list(CAST = subset(standPeriodTable_CAST, period == "1996_2013"),
+                    E0 = subset(standPeriodTable_E0, period == "1996_2013"),
+                    E1A = subset(standPeriodTable_E1A, period == "1996_2013"),
+                    #E1B =  subset(standPeriodTable_E1B, period == "1996_2013"),
+                    E2 = subset(standPeriodTable_E2, period == "1996_2013"))
 
 # Initialize and fill a correlation matrix
 correlationSimulationMatrix = as.data.frame(tibble( CASTANEA = 0, E0 = 0, E1A = 0, 
                                                     # E1B = 0, 
                                                     E2 = 0, .rows = length(listOfTables)))
-colnames(correlationSimulationMatrix) = c("CASTANEA (RN)", "PDG-Arena (RN)", "PDG-Arena (RS)", "PDG-Arena (O)")
+colnames(correlationSimulationMatrix) = c("CASTANEA (RM)", "PDG-Arena (RM)", "PDG-Arena (R)", "PDG-Arena (O)")
 rownames(correlationSimulationMatrix) = names(correlationSimulationMatrix)
 correlationMode = "correlation" # RMSE 1-r2 correlation
 variableOfInterest = "GPPy_m2_sim"
@@ -835,18 +836,6 @@ for(i in 1:nI){
     correlationSimulationMatrix[i, j] = correlationOfCouple[correlationOfCouple$test == correlationMode,]$PDGvsMES
     
     
-    # # graphes 2 à 2
-    # a_title = paste0(names(correlationSimulationMatrix)[i], "_v_", names(correlationSimulationMatrix)[j])
-    # ggplot(coupledTable,
-    #        aes(x = BAIy_sim1, y = BAIy_sim2, color = composition, label = code_site_cut, shape = factor(site))
-    # ) +
-    #   ggtitle(a_title) +
-    #   # facet_grid(composition ~ site) +
-    #   geom_text_repel(size = 3.5, alpha = 0.7) +
-    #   geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) +
-    #   coord_limits + scale_shape_manual(values = c(15,19,17))
-    # saveLastGgPlot(folderPlot, plot_width = 1440, ratio = 4/3, fileName = paste0(a_title, ".png"))
-    
   }
 }
 
@@ -875,8 +864,8 @@ ggcorrplot(myMat, legend.title = correlationMode,
         # legend.key.size = unit(1, 'cm'), # legend size
         text=element_text(size=textSize) # text size
   ) 
-folderPlot = paste0("local_plots/", currentSimulation, "divers/")
-saveLastGgPlot(folderPlot, plot_height = 720, ratio = 4/3, fileSuffix = ".pdf")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")
+saveLastGgPlot(fileName = "matrix", folderPlot, plot_height = 720, ratio = 4/3, fileSuffix = ".pdf")
 
 
 
@@ -921,16 +910,22 @@ for(var in variableList){
 # Plot 
 
 pointSize = 3 ; textSize = 14
-xValMin = 0 ; xValMax = 1780 ; yValMin = 0 ; yValMax = 1780 ; coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
+xValMin = 0 ; xValMax = NA ; yValMin = 0 ; yValMax = NA ; coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
 
 simulationComparaisonTable_sub = subset(simulationComparaisonTable, period == "1996_2013")
 simulationComparaisonTable_sub = removeUnits(simulationComparaisonTable_sub)
+
+summary(lm(data = simulationComparaisonTable_sub, formula = GPPy_m2_sim_E0 ~ GPPy_m2_sim_CAST ))
+
+cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]]) **2
+
 ggplot(simulationComparaisonTable_sub, 
-       aes_string(x = paste0(variableOfInterest, suffix2), y = paste0(variableOfInterest, suffix1), color = "composition", shape = "factor(site)"
-                  # label = code_site_cut, shape = factor(site)
+       aes_string(x = paste0(variableOfInterest, suffix2), y = paste0(variableOfInterest, suffix1), 
+                  color = "composition", shape = "factor(site)"
+                  # label = "code_site_cut"
        )
 ) + 
-  facet_grid( . ~ .) +
+  # geom_smooth(method = "lm") +
   # geom_text_repel(size = 3.5, alpha = 0.7) +
   geom_point(size = pointSize, alpha = 0.75) + geom_abline(slope = 1, alpha = 0.25) + 
   coord_limits + 
@@ -950,11 +945,11 @@ ggplot(simulationComparaisonTable_sub,
     legend.text=element_text(size=textSize), #change font size of legend text
     legend.title=element_text(size=textSize) #change font size of legend title
   )+
-  annotate("text", x=1700, y= 1600, label= "1:1", size = 4.5) +
-  annotate("text", x=920, y= 1250, label= paste0("r = ", round(cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]]), 3)
+  annotate("text", x=2000, y= 1800, label= "1:1", size = 4.5) +
+  annotate("text", x=920, y= 1500, label= paste0("r = ", round(cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]]), 3)
   ) , size = 4.5) 
-folderPlot = paste0("local_plots/", currentSimulation, "divers/")
-saveLastGgPlot(folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")
+saveLastGgPlot(fileName = "E0_CAST", folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
 
 
 
