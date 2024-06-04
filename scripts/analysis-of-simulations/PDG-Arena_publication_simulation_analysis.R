@@ -633,8 +633,8 @@ standPeriodTable_GMAP = addNewColumnsAndUnits(standPeriodTable_GMAP, simuListIrr
 # Remove outliers ----
 
 # outlierList = c()
-# outlierList = c("bg_haut_sp_2")
-outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
+outlierList = c("bg_haut_sp_2")
+# outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
 # outlierList = c("bg_haut_sp_2", "bg_bas_sp_4", "bg_bas_sp_5")
 
 if(length(outlierList)>0){
@@ -726,17 +726,19 @@ xValMax = max(xValMax, yValMax) * 1.06
 yValMax = max(xValMax, yValMax)
 coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
 
-size = 4
+size = 3
 folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 for(i in 1:length(standPeriodTable_list)){
   a_standPeriodTable = standPeriodTable_list[[i]]
+  
   a_title = title_list[[i]]
   ggplot(subset(a_standPeriodTable, period == "1996_2013"), 
          aes_string(x = variableX, y = variableY, color = "composition", label = "code_site_cut", shape = "factor(site)")
   ) + 
     # a_title +
     # facet_grid( . ~ composition) +
-    # geom_text_repel(size = 3.5, alpha = 0.7) +
+    # geom_label(data = subset(a_standPeriodTable,period == "1996_2013" & code_site %in% outlierList),  aes_string(x = variableX, y = variableY, label = "code_site")) +
+    geom_text_repel(size = 3.5, alpha = 0.7, data =  subset(a_standPeriodTable,period == "1996_2013" & code_site %in% outlierList)) +
     geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
     coord_limits+
     ylab("WVI simulated")+
@@ -748,7 +750,7 @@ for(i in 1:length(standPeriodTable_list)){
                        values = c(15,19,17)) +
     annotate("text", x= yValMax *0.85, y=yValMax*0.9, label= "1:1", size = 6)
   
-  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI2_nolabel", "_", a_title$title))
+  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale= 0.6, fileName = paste0("WVI2_nolabel", "_", a_title$title))
 }
 
 
@@ -948,7 +950,7 @@ ggplot(simulationComparaisonTable_sub,
   annotate("text", x=2000, y= 1800, label= "1:1", size = 4.5) +
   annotate("text", x=920, y= 1500, label= paste0("r = ", round(cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]]), 3)
   ) , size = 4.5) 
-folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 saveLastGgPlot(fileName = "E0_CAST", folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
 
 
@@ -1168,12 +1170,12 @@ stat_comparison_pairs = list( c("RM", "R"), c("RM", "O"), c("R", "O") )
 
 # Choice of variables to plot:
 variablesPlot = c(
-  # "transpiration",
+  "transpiration",
   # "REWmin", 
   # "RU_level_min",
-  "GPPy_m2_sim",
-  "vegAbsorbance"
-  # "RU_shortage_max"
+  # "GPPy_m2_sim",
+  # "vegAbsorbance"
+  "RU_shortage_max"
   )
 
 # Plot boxplot
@@ -1203,8 +1205,8 @@ ggplot(subset(lollypopTable_long, variable_short %in% variablesPlot &
 
 
 
-folderPlot = paste0("local_plots/", currentSimulation, "divers/1outlier/")
-saveLastGgPlot(fileName = "VARIABLES_per_mode", folderPlot, plot_height = 720, ratio = 3/2, scale = 0.7, fileSuffix = ".pdf")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")
+saveLastGgPlot(fileName = "VARIABLES_per_mode_water", folderPlot, plot_height = 720, ratio = 3/2, scale = 0.7, fileSuffix = ".pdf")
 
 
 
@@ -1383,9 +1385,8 @@ ggplot(stat_table[!stat_table$ignore, ], aes(MAPE, MAPE_on_log, color = composit
 
 
 # plot with fit and r2
-folderPlot = paste0("local_plots/", currentSimulation, "divers/")
 
-textSize = 4
+textSize = 2.7
 ggplot(subTreePeriodTable_E2, 
        aes(x = WVIcy_mes, y = WVIoy_sim, color = species)) + 
   geom_abline(slope = 1, alpha = 0.25) +
@@ -1400,18 +1401,29 @@ ggplot(subTreePeriodTable_E2,
 saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI_indiv_period_compo_site_species"))
 
 
-
+# on log
 ggplot(subTreePeriodTable_E2_positive, 
-       aes(x = log10(WVIcy_mes), y = log10(WVIoy_sim), color = species)) + 
-  geom_abline(slope = 1, alpha = 0.25) +
-  geom_smooth(method = "lm") +
+       aes(x = (WVIcy_mes), y = (WVIoy_sim), color = species)) + 
+  geom_abline(slope = 1, alpha = 0.1) +
+  geom_smooth(method = "lm", show.legend = F,
+              # fullrange = T, level = 0.01,
+              data = subTreePeriodTable_E2_positive[!((subTreePeriodTable_E2_positive$species == "hetre" & subTreePeriodTable_E2_positive$composition == "sp") | (subTreePeriodTable_E2_positive$species == "sapin" & subTreePeriodTable_E2_positive$composition == "ph") ), ]) +
   geom_point() +
-  facet_grid(composition ~ site) +
+  facet_grid(composition ~ site,
+             labeller = labeller(site = c("bg" = "Bauges", "vtx" = "Ventoux", "vl" = "Vercors"), 
+                                          composition = c("m" = "Mixed stand", "ph" = "Beech stand", "sp" = "Fir stand"))) +
   geom_text(data = stat_table[!stat_table$ignore, ],
-            aes(x = 1.5, y = 4.50 - 0.5 *(species == "hetre"), 
-                label = paste0("r2 = ", round(r2_on_log, 2), " [y = ", round(slope_on_log,2), "*x " , ifelse(sign(intercept_on_log) >= 0, "+ ", "- "), signif(abs(intercept_on_log),2), "]")),
-            size = textSize) +
-  xlim(c(0,NA)) + ylim(c(0, 5))
+            aes(x = 10**1.7, y = 1e5 - 1e5 * 0.55 *(species == "sapin") * (composition == "m"), 
+            label = paste0("r2 = ", round(r2_on_log, 2), ", MAPE = ", round(MAPE_on_log, 2))),
+            # label = paste0("r2 = ", round(r2_on_log, 2), " [y = ", round(slope_on_log,2), "*x " , ifelse(sign(intercept_on_log) >= 0, "+ ", "- "), signif(abs(intercept_on_log),2), "]")),
+            size = textSize, hjust = "left", vjust = "top", show.legend = F) +
+  scale_x_continuous(trans= "log10", limits = c(NA, 1e5), labels = scales::label_number()) +
+  scale_y_continuous(trans= "log10", limits = c(NA, 1e5), labels = scales::label_number())+
+  scale_color_manual(values=c("#d64d4d", "#1b85b8"), labels = c("beech", "fir"), name = "Tree species") +
+  xlab("WVI measured [cm3]")+
+  ylab("WVI simulated [cm3]")
 
-saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI_log_individ_period_compo_site_species"))
+
+folderPlot = paste0("local_plots/", currentSimulation, "divers/1outlier/")
+saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale=  0.7, fileName = paste0("WVI_log_indiv_period_compo_site_species"))
 
