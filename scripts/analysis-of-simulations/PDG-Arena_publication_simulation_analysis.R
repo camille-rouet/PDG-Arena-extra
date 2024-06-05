@@ -633,8 +633,8 @@ standPeriodTable_GMAP = addNewColumnsAndUnits(standPeriodTable_GMAP, simuListIrr
 # Remove outliers ----
 
 # outlierList = c()
-outlierList = c("bg_haut_sp_2")
-# outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
+# outlierList = c("bg_haut_sp_2")
+outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
 # outlierList = c("bg_haut_sp_2", "bg_bas_sp_4", "bg_bas_sp_5")
 
 if(length(outlierList)>0){
@@ -1170,12 +1170,12 @@ stat_comparison_pairs = list( c("RM", "R"), c("RM", "O"), c("R", "O") )
 
 # Choice of variables to plot:
 variablesPlot = c(
-  "transpiration",
+  # "transpiration",
   # "REWmin", 
   # "RU_level_min",
-  # "GPPy_m2_sim",
-  # "vegAbsorbance"
-  "RU_shortage_max"
+  "GPPy_m2_sim",
+  "vegAbsorbance"
+  # "RU_shortage_max"
   )
 
 # Plot boxplot
@@ -1218,19 +1218,74 @@ saveLastGgPlot(fileName = "VARIABLES_per_mode_water", folderPlot, plot_height = 
 # SOME LAST STATISTICS
 lollypopTable = removeUnits(lollypopTable)
 
-t.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A, var.equal = T)
-t.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A, paired = T)
-ks.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A)
+# t.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A, var.equal = T)
+# t.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A, paired = T)
+# ks.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A)
 
-(mean(lollypopTable$GPPy_abs_sim_E1A) -  mean(lollypopTable$GPPy_abs_sim_E0)) / mean(lollypopTable$GPPy_abs_sim_E0)
+
+
+# NET MIXING EFFECT
+
+# GPP
+mean(lollypopTable$GPPy_m2_sim_E1A)
+mean(lollypopTable$GPPy_m2_sim_E0)
+(mean(lollypopTable$GPPy_m2_sim_E1A) -  mean(lollypopTable$GPPy_m2_sim_E0)) / mean(lollypopTable$GPPy_m2_sim_E0)
 wilcox.test(lollypopTable$GPPy_m2_sim_E0, lollypopTable$GPPy_m2_sim_E1A, paired = T)
 
+# Absorbance
+mean(lollypopTable$vegAbsorbance_E1A)
+mean(lollypopTable$vegAbsorbance_E0)
 (mean(lollypopTable$vegAbsorbance_E1A) -  mean(lollypopTable$vegAbsorbance_E0)) / mean(lollypopTable$vegAbsorbance_E0)
 # IF ERROR " impossible de calculer une p-value exacte avec des zéros", it is because values the variables were taken from the exact same simulation (for example in the case of monospecific stands, simulations were the same between regdemo_monosp and regdemo_plurisp)
 wilcox.test(lollypopTable$vegAbsorbance_E0, lollypopTable$vegAbsorbance_E1A, paired = T)
 
+# Transpiration
+mean(lollypopTable$transpiration_E1A)
+mean(lollypopTable$transpiration_E0)
+(mean(lollypopTable$transpiration_E1A) -  mean(lollypopTable$transpiration_E0)) / mean(lollypopTable$transpiration_E0)
+# IF ERROR " impossible de calculer une p-value exacte avec des zéros", it is because values the variables were taken from the exact same simulation (for example in the case of monospecific stands, simulations were the same between regdemo_monosp and regdemo_plurisp)
+wilcox.test(lollypopTable$transpiration_E0, lollypopTable$transpiration_E1A, paired = T)
 
 
+# Maximum water shortage
+mean(lollypopTable$RU_shortage_max_E1A)
+mean(lollypopTable$RU_shortage_max_E0)
+(mean(lollypopTable$RU_shortage_max_E1A) -  mean(lollypopTable$RU_shortage_max_E0)) / mean(lollypopTable$RU_shortage_max_E0)
+# IF ERROR " impossible de calculer une p-value exacte avec des zéros", it is because values the variables were taken from the exact same simulation (for example in the case of monospecific stands, simulations were the same between regdemo_monosp and regdemo_plurisp)
+wilcox.test(lollypopTable$RU_shortage_max_E0, lollypopTable$RU_shortage_max_E1A, paired = T)
+
+
+
+
+# NET STRUCTURE EFFECT
+
+# GPP
+mean(lollypopTable$GPPy_m2_sim_E2)
+mean(lollypopTable$GPPy_m2_sim_E1A)
+(mean(lollypopTable$GPPy_m2_sim_E2) -  mean(lollypopTable$GPPy_m2_sim_E1A)) / mean(lollypopTable$GPPy_m2_sim_E1A)
+wilcox.test(lollypopTable$GPPy_m2_sim_E1A, lollypopTable$GPPy_m2_sim_E2, paired = T)
+
+# Absorbance
+mean(lollypopTable$vegAbsorbance_E2)
+mean(lollypopTable$vegAbsorbance_E1A)
+(mean(lollypopTable$vegAbsorbance_E2) -  mean(lollypopTable$vegAbsorbance_E1A)) / mean(lollypopTable$vegAbsorbance_E1A)
+# IF ERROR " impossible de calculer une p-value exacte avec des zéros", it is because values the variables were taken from the exact same simulation (for example in the case of monospecific stands, simulations were the same between regdemo_monosp and regdemo_plurisp)
+wilcox.test(lollypopTable$vegAbsorbance_E1A, lollypopTable$vegAbsorbance_E2, paired = T)
+
+# Transpiration
+mean(lollypopTable$transpiration_E2)
+mean(lollypopTable$transpiration_E1A)
+(mean(lollypopTable$transpiration_E2) -  mean(lollypopTable$transpiration_E1A)) / mean(lollypopTable$transpiration_E1A)
+# IF ERROR " impossible de calculer une p-value exacte avec des zéros", it is because values the variables were taken from the exact same simulation (for example in the case of monospecific stands, simulations were the same between regdemo_monosp and regdemo_plurisp)
+wilcox.test(lollypopTable$transpiration_E1A, lollypopTable$transpiration_E2, paired = T)
+
+
+# Maximum water shortage
+mean(lollypopTable$RU_shortage_max_E2)
+mean(lollypopTable$RU_shortage_max_E1A)
+(mean(lollypopTable$RU_shortage_max_E2) -  mean(lollypopTable$RU_shortage_max_E1A)) / mean(lollypopTable$RU_shortage_max_E1A)
+# IF ERROR " impossible de calculer une p-value exacte avec des zéros", it is because values the variables were taken from the exact same simulation (for example in the case of monospecific stands, simulations were the same between regdemo_monosp and regdemo_plurisp)
+wilcox.test(lollypopTable$RU_shortage_max_E1A, lollypopTable$RU_shortage_max_E2, paired = T)
 
 
 
@@ -1390,13 +1445,20 @@ textSize = 2.7
 ggplot(subTreePeriodTable_E2, 
        aes(x = WVIcy_mes, y = WVIoy_sim, color = species)) + 
   geom_abline(slope = 1, alpha = 0.25) +
-  geom_smooth(method = "lm") + geom_point() +
-  facet_grid(composition ~ site) +
+  geom_smooth(method = "lm", show.legend = F,
+              data = subTreePeriodTable_E2_positive[!((subTreePeriodTable_E2_positive$species == "hetre" & subTreePeriodTable_E2_positive$composition == "sp") | (subTreePeriodTable_E2_positive$species == "sapin" & subTreePeriodTable_E2_positive$composition == "ph") ), ]) + geom_point() +
+  facet_grid(composition ~ site,
+             labeller = labeller(site = c("bg" = "Bauges", "vtx" = "Ventoux", "vl" = "Vercors"), 
+                                 composition = c("m" = "Mixed stand", "ph" = "Beech stand", "sp" = "Fir stand"))) +
   geom_text(data = stat_table[!stat_table$ignore, ], 
-            aes(x = 120000, y = 120000 - 10000 *(species == "hetre"), 
-                label = paste0("r2 = ", round(r2, 2), " [y = ", round(slope,2), "*x " , ifelse(sign(intercept) >= 0, "+ ", "- "), signif(abs(intercept),2), "]")),
-            size = textSize) +
-  xlim(c(0,NA)) + ylim(c(0, 120000))
+            aes(x = 100000, y = 75000 - 10000 *(species == "sapin")* (composition == "m"), 
+                label = paste0("r2 = ", round(r2, 2), ", MAPE = ", round(MAPE, 2))),
+                # label = paste0("r2 = ", round(r2, 2), " [y = ", round(slope,2), "*x " , ifelse(sign(intercept) >= 0, "+ ", "- "), signif(abs(intercept),2), "]")),
+            size = textSize, hjust = "left", vjust = "top", show.legend = F) +
+  xlim(c(0,NA)) + ylim(c(0, 120000))+
+  scale_color_manual(values=c("#d64d4d", "#1b85b8"), labels = c("beech", "fir"), name = "Tree species") +
+  xlab("WVI measured [cm3]")+
+  ylab("WVI simulated [cm3]")
 
 saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI_indiv_period_compo_site_species"))
 
@@ -1405,18 +1467,18 @@ saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WV
 ggplot(subTreePeriodTable_E2_positive, 
        aes(x = (WVIcy_mes), y = (WVIoy_sim), color = species)) + 
   geom_abline(slope = 1, alpha = 0.1) +
-  geom_smooth(method = "lm", show.legend = F,
-              # fullrange = T, level = 0.01,
-              data = subTreePeriodTable_E2_positive[!((subTreePeriodTable_E2_positive$species == "hetre" & subTreePeriodTable_E2_positive$composition == "sp") | (subTreePeriodTable_E2_positive$species == "sapin" & subTreePeriodTable_E2_positive$composition == "ph") ), ]) +
+  # geom_smooth(method = "lm", show.legend = F,
+  #             # fullrange = T, level = 0.01,
+  #             data = subTreePeriodTable_E2_positive[!((subTreePeriodTable_E2_positive$species == "hetre" & subTreePeriodTable_E2_positive$composition == "sp") | (subTreePeriodTable_E2_positive$species == "sapin" & subTreePeriodTable_E2_positive$composition == "ph") ), ]) +
   geom_point() +
   facet_grid(composition ~ site,
              labeller = labeller(site = c("bg" = "Bauges", "vtx" = "Ventoux", "vl" = "Vercors"), 
                                           composition = c("m" = "Mixed stand", "ph" = "Beech stand", "sp" = "Fir stand"))) +
-  geom_text(data = stat_table[!stat_table$ignore, ],
-            aes(x = 10**1.7, y = 1e5 - 1e5 * 0.55 *(species == "sapin") * (composition == "m"), 
-            label = paste0("r2 = ", round(r2_on_log, 2), ", MAPE = ", round(MAPE_on_log, 2))),
-            # label = paste0("r2 = ", round(r2_on_log, 2), " [y = ", round(slope_on_log,2), "*x " , ifelse(sign(intercept_on_log) >= 0, "+ ", "- "), signif(abs(intercept_on_log),2), "]")),
-            size = textSize, hjust = "left", vjust = "top", show.legend = F) +
+  # geom_text(data = stat_table[!stat_table$ignore, ],
+  #           aes(x = 10**1.7, y = 1e5 - 1e5 * 0.55 *(species == "sapin") * (composition == "m"), 
+  #           label = paste0("r2 = ", round(r2, 2), ", MAPE = ", round(MAPE, 2))),
+  #           # label = paste0("r2 = ", round(r2_on_log, 2), " [y = ", round(slope_on_log,2), "*x " , ifelse(sign(intercept_on_log) >= 0, "+ ", "- "), signif(abs(intercept_on_log),2), "]")),
+  #           size = textSize, hjust = "left", vjust = "top", show.legend = F) +
   scale_x_continuous(trans= "log10", limits = c(NA, 1e5), labels = scales::label_number()) +
   scale_y_continuous(trans= "log10", limits = c(NA, 1e5), labels = scales::label_number())+
   scale_color_manual(values=c("#d64d4d", "#1b85b8"), labels = c("beech", "fir"), name = "Tree species") +
@@ -1424,6 +1486,8 @@ ggplot(subTreePeriodTable_E2_positive,
   ylab("WVI simulated [cm3]")
 
 
-folderPlot = paste0("local_plots/", currentSimulation, "divers/1outlier/")
-saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale=  0.7, fileName = paste0("WVI_log_indiv_period_compo_site_species"))
+folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")
+saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale=  0.7, fileName = paste0("WVI_log_indiv_period_compo_site_species_notext"))
 
+
+summary(stat_table[!stat_table$ignore, ])
