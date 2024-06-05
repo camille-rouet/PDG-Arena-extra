@@ -20,11 +20,11 @@ Here are the files used in this publication:
 
 — This folder contains the virtual inventories used in the simulation
 
-> inventories/2023-12-15_GMAP_hauteurMoy_NoSlope_goodAlignment/sites_description/LAI_GMAP.csv
+> inventories/2023-12-15_GMAP_hauteurMoygoodAlignment/sites_description/LAI_GMAP.csv
 
 — Data table describing the simulated plots and in particular their Leaf Area Index
 
-> inventories/2023-12-15_GMAP_hauteurMoy_NoSlope_goodAlignment/sites_description/soil_CASTANEA_GMAP.csv
+> inventories/2023-12-15_GMAP_hauteurMoy_goodAlignment/sites_description/soil_CASTANEA_GMAP.csv
 
 — Data table describing the soil texture of GMAP sites
 
