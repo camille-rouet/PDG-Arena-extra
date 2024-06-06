@@ -16,10 +16,6 @@ Rouet et al. (2024): PDG-Arena: An eco-physiological model for characterizing tr
 
 Here are the files used in this publication:
 
-> inventories/2024-05-06_GMAP_publication/ 
-
-— This folder contains the virtual inventories used in the simulation
-
 > scripts/generation-of-inventories/GMAPtoPDG.R 
 
 — The script used to generates inventories
@@ -28,25 +24,31 @@ Here are the files used in this publication:
 
 — The script used to analyse the simulations and plot the result figures
 
-> simulation-data/paper-PDG-Arena/2024-05-07_GMAP_publication.RData 
+The following files are in simulation-data/paper-PDG-Arena/:
+
+> inventories/2024-05-06_GMAP_publication/ 
+
+— This folder contains the virtual inventories used in the simulation
+
+> Rdata/2024-05-07_GMAP_publication.RData 
 
 — A Rdata file containing the simulation results (see the accompanying readme file)
 
-> simulation-data/paper-PDG-Arena/multiScripts_copy.txt 
-
-— The script used to launch the simulation
-
-> simulation-data/paper-PDG-Arena/simulations-meta-informations.txt 
-
-— It contains simulation meta-information such as software version
-
-> simulation-data/paper-PDG-Arena/sites_description/LAImax_PROBAV_GMAP.csv
+> sites_description/LAImax_PROBAV_GMAP.csv
 
 — Data table describing the Leaf Area Index per plot
 
-> simulation-data/paper-PDG-Arena/sites_description/soil_CASTANEA_GMAP.csv
+> sites_description/soil_CASTANEA_GMAP.csv
 
 — Data table describing the soil texture of GMAP sites
+
+> multiScripts_copy.txt 
+
+— The script used to launch the simulation
+
+> simulations-meta-informations.txt 
+
+— It contains simulation meta-information such as software version
 
 
 ## License
