@@ -1,18 +1,9 @@
-# Columns of LAI_GMAP.csv
+# LAImax_PROBAV_GMAP.csv
+This table contains the Leaf Area Index computed from the SPOT/PROBA-V remote sensing for years 1999 to 2022.
 
-position_n	latitude
-position_e	longitude
-altitude	in m, altitude
-exposition	in degree
-pente	in degree
-standArea	in m2
-nTrees	
-nBeech	
-nFir	
-nTreesM2	in tree/m2
-hasLIDAR	Has Terrestrial Laser Scanning been passed ? If FALSE, LAI was set at the average of the measured LAI
-dateLIDAR	date of the scanning
-LAI	no unit, Leaf Area Index estimated using Terrestrial Laser Scanning
+code_site	Code of the plot
+site 	Site of the plot (bg = Bauges, vl = Vercors, vtx = Ventoux)
+lat, long	Coordinates of the plot in WGS84
 
 
 # Columns of soil_soil_CASTANEA_GMAP.csv
