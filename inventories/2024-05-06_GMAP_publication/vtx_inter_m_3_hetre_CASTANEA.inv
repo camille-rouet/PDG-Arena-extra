@@ -1,0 +1,51 @@
+## Capsis 4.1 - module CASTANEAonly
+# CASTANEA inventory based on GMAP data, code_site: vtx_inter_m_3
+# Date and time: 2024-05-06 17:06:06
+## Time machine was used
+
+	#<General>
+
+	#SIMULATION parameters
+year=  1995
+
+	#PLOT parameters
+
+FmCellWidth = 80
+latitude = 44.19071
+longitude = 5.2552
+
+	#CASTANEA parameters
+CO2mode = CO2_PAST_EVOLUTION
+elevationEffect = ELEVATION_EFFECT_FIXED
+predawnModel = PREDAWN_CAMP
+frostEffectCoef = 0
+iFROST = 0
+simulationReproduction = FALSE
+simulationDefoliation = FALSE
+mortalityModel = MORTALITY_NO
+sureau = FALSE
+LAImode = LAI_FIXED
+typeOfVegetation = TYPE_VEG_AVG_TREE
+fixedTronviv = FALSE
+fixedAgeOftrees = FALSE
+initWoodByVolume = FALSE
+phenoMode = PHENO_CASTANEA
+stomataStress = STOMATA_STRESS_GRANIER
+vcmaxStress = FALSE
+droughtOnRespiration = FALSE
+iKarst = 0
+rootsCavitation = FALSE
+elevationEffectSimple_GMAP = TRUE
+temperatureEffectOnPhotosynthesis = TEMPERATURE_EFFECT_BERNACCHI
+allocRemain = ALLOC_REMAIN_WOOD
+allocSchema = ALLOC_SCHEMA_DAVI2009
+basicMeteoFile = none
+fixedRDI = TRUE
+nbCanopyLayers = 5
+
+#possible optional variables:  nitrogen LMA nc coefBeta MRN gfac slopePotGs Nstress Tsum woodStop GBV CRBV tronviv PotWood coefrac rootshoot aGF dateDeb rateOfSeedcell costSeedcell meanHeight
+optionalVariables = meanHeight
+
+	#Flux-model cells
+#Type	Name	Species	xc	yc	zc	soilHeight	stone	wfc	wilt	propMacro	bulk	SOLCLAYtop	SOLCLAYsol	SOLFINtop	SOLFINsol	SOLSANDtop	SOLSANDsol	prac	pracDeep	deepSoilDep	stoneDeep	MacroDeep	dbh	Nha	Vha	age	clumping	LAI	optional variable
+FMC	1	3	20	20	1198	1600	0.422	0.372	0.251	0	1	0.569	0.569	0.913	0.913	0.087	0.087	0.5	0	0	0	0	19.699	1087.665	0	46	0	3.372	15.49
