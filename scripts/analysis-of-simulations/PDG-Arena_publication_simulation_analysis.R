@@ -4,14 +4,15 @@
 
 # Recommandation for external user 
 #   1. Go to QUICK CONFIGURATION
-#   2. Load "simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment.RData" 
-#   Main variables of the .Rdata file are explained in "simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment_readme.txt"
-#   3. Source "CRMethodsForSimulations.R" 
-#   4. Go directly to the graph sections (skip CONFIGURATION, IMPORT and CONVERSION sections)
+#   2. Execute "load(...)" to import data tables (Main variables of the .Rdata file are explained in "simulation-data/paper-PDG-Arena/readme_when_loading_rdata.txt")
+#   3. Execute "source(...)" to load the methods for the analysis
+#   (skip CONFIGURATION, IMPORT and CONVERSION sections)
+#   4. (optional) Go to the Remove outliers section
+#   5. Go to the "3.1" section
 
 
 # QUICK CONFIGURATION   --------------------------------------------------------
-load("simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment.RData")
+load("simulation-data/paper-PDG-Arena/2024-05-07_GMAP_publication.RData")
 source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
 
@@ -24,7 +25,6 @@ workfilesPath = ""
 PROGRAM_ON_SERVER = FALSE
 
 source("scripts/define_folders.R")
-
 source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
 
@@ -631,6 +631,7 @@ standPeriodTable_GMAP = addNewColumnsAndUnits(standPeriodTable_GMAP, simuListIrr
 
 
 # Remove outliers ----
+# Execute the lines of this section to remove outliers
 
 # outlierList = c()
 # outlierList = c("bg_haut_sp_2")
@@ -657,8 +658,6 @@ if(length(outlierList)>0){
   standPeriodTable_E2 = subset(standPeriodTable_E2, !code_site %in% outlierList)
   standPeriodTable_GMAP = subset(standPeriodTable_GMAP, !code_site %in% outlierList)
 }
-
-
 
 
 
@@ -691,94 +690,6 @@ if(import_CAST){
 }
 
 
-
-
-
-# SYNTHESE
-# We have table with simulated and measured Wood Volume Increment for :
-# tree-year : E2
-# tree-year : E1B (irregdemo monosp)
-# stand-year : E2
-# stand-year : E1B
-# stand-year : E1A
-# stand-year : E0
-# stand-year : CASTANEA
-# + the same tables using periods
-
-
-
-
-
-
-
-# GRAPH SHOWING ALL STANDS --------------------------------------------------------------------
-# (Appendix) Graph with all stands 
-
-# define variables and plot boundaries
-variableY = "WVIoy_m2_sim"
-variableX = "WVIcy_m2_mes"
-xValMin = 0 ; yValMin = 0  ; xValMax = 0 ; yValMax = 0
-for(a_standPeriodTable in standPeriodTable_list){
-  xValMax = max(xValMax, subset(a_standPeriodTable, period == "1996_2013")[[variableX]])
-  yValMax = max(yValMax, subset(a_standPeriodTable, period == "1996_2013")[[variableY]])
-}
-xValMax = max(xValMax, yValMax) * 1.06
-yValMax = max(xValMax, yValMax)
-coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
-
-size = 3
-folderPlot = paste0("local_plots/", currentSimulation, "divers/")
-for(i in 1:length(standPeriodTable_list)){
-  a_standPeriodTable = standPeriodTable_list[[i]]
-  
-  a_title = title_list[[i]]
-  ggplot(subset(a_standPeriodTable, period == "1996_2013"), 
-         aes_string(x = variableX, y = variableY, color = "composition", label = "code_site_cut", shape = "factor(site)")
-  ) + 
-    # a_title +
-    # facet_grid( . ~ composition) +
-    # geom_label(data = subset(a_standPeriodTable,period == "1996_2013" & code_site %in% outlierList),  aes_string(x = variableX, y = variableY, label = "code_site")) +
-    geom_text_repel(size = 3.5, alpha = 0.7, data =  subset(a_standPeriodTable,period == "1996_2013" & code_site %in% outlierList)) +
-    geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
-    coord_limits+
-    ylab("WVI simulated")+
-    xlab("WVI measured")+
-    scale_color_discrete(name = "Composition",
-                         labels = c("Mixed", "Beech", "Fir"))+
-    scale_shape_manual(name = "Site",
-                       labels = c("Bauges", "Vercors", "Ventoux"),
-                       values = c(15,19,17)) +
-    annotate("text", x= yValMax *0.85, y=yValMax*0.9, label= "1:1", size = 6)
-  
-  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale= 0.6, fileName = paste0("WVI2_nolabel", "_", a_title$title))
-}
-
-
-
-# other graphs
-# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = site)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + coord_limits
-# 
-# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = site)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + facet_grid(. ~composition) + coord_limits
-# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), aes(x = BAIy_mes, y = BAIy_sim, shape = factor(triplet), color = composition)) + scale_shape_manual(values = 0:100) + geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + title_4 + facet_grid(. ~site) + coord_limits
-# 
-# ggplot(standPeriodTable_E2, aes(x = BAIy_mes, y = BAIy_sim)) + geom_point() + geom_abline(slope = 1, alpha = 0.25) + facet_grid(composition ~ period) + title_4 + coord_limits
-# ggplot(standPeriodTable_E2, aes(x = BAIy_mes_scaled, y = GPPy_abs_sim_scaled)) + geom_point()+ geom_abline(slope = 1, alpha = 0.25) + facet_grid(. ~ composition) + title_4 
-
-
-
-
-# GRAPHE GPP BY SITES AND COMPOSITION
-# ggplot(subset(standPeriodTable_E2, period == "1996_2013"), 
-#        aes(x = BAIy_mes, y = BAIy_sim, color = composition, label = code_site_cut, shape = factor(site))
-# ) + 
-#   # a_title + 
-#   facet_grid(composition ~ site) +
-#   geom_text_repel(size = 3.5, alpha = 0.7) +
-#   geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
-#   scale_shape_manual(values = c(15,19,17)) 
-# 
-# folderPlot = paste0("local_plots/", currentSimulation, "divers/")
-# saveLastGgPlot(folderPlot, plot_width = 1440, ratio = 4/3, fileName = paste0("bysitecompo", ".png"))
 
 
 
@@ -965,7 +876,7 @@ saveLastGgPlot(fileName = "E0_CAST", folderPlot, plot_width = 720, ratio = 1.20,
 
 
 
-# 3.2 STATISTICS -------------------------------------------------------------------
+# 3.2 PERFORMANCE STATISTICS -------------------------------------------------------------------
 # (Part 3.2) Correlation and error coefficients on simulated versus measured variables
 
 # Defines the variables of interest and coefficient to comptute
@@ -979,9 +890,6 @@ stat_list = list()
 index = 1
 for(a_standPeriodTable in standPeriodTable_list){
   subTable = subset(a_standPeriodTable, period == "1996_2013")
-  # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_haut_sp_2"))
-  # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_bas_sp_4", "bg_haut_sp_2"))
-  # subTable = subset(a_standPeriodTable, period == "1996_2013" & ! code_site %in% c("bg_bas_sp_4", "bg_bas_sp_5", "bg_haut_sp_2"))
   stat_list[[suffix_list[index]]] = getComparisonCoefficientPerSiteAndComposition(
     subTable, 
     var1, var2, coefficients_list)
@@ -1215,16 +1123,8 @@ saveLastGgPlot(fileName = "VARIABLES_per_mode_water", folderPlot, plot_height = 
 
 
 
-# SOME LAST STATISTICS
-lollypopTable = removeUnits(lollypopTable)
-
-# t.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A, var.equal = T)
-# t.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A, paired = T)
-# ks.test(lollypopTable$GPPy_abs_sim_E0, lollypopTable$GPPy_abs_sim_E1A)
-
-
-
 # NET MIXING EFFECT
+lollypopTable = removeUnits(lollypopTable)
 
 # GPP
 mean(lollypopTable$GPPy_m2_sim_E1A)
@@ -1258,6 +1158,7 @@ wilcox.test(lollypopTable$RU_shortage_max_E0, lollypopTable$RU_shortage_max_E1A,
 
 
 # NET STRUCTURE EFFECT
+lollypopTable = removeUnits(lollypopTable)
 
 # GPP
 mean(lollypopTable$GPPy_m2_sim_E2)
@@ -1286,6 +1187,58 @@ mean(lollypopTable$RU_shortage_max_E1A)
 (mean(lollypopTable$RU_shortage_max_E2) -  mean(lollypopTable$RU_shortage_max_E1A)) / mean(lollypopTable$RU_shortage_max_E1A)
 # IF ERROR " impossible de calculer une p-value exacte avec des zéros", it is because values the variables were taken from the exact same simulation (for example in the case of monospecific stands, simulations were the same between regdemo_monosp and regdemo_plurisp)
 wilcox.test(lollypopTable$RU_shortage_max_E1A, lollypopTable$RU_shortage_max_E2, paired = T)
+
+
+
+
+
+
+
+
+# APPENDIX SIMULATED VS MEASURED (STAND-SCALE) --------------------------------------------------------------------
+
+# define variables and plot boundaries
+variableY = "WVIoy_m2_sim"
+variableX = "WVIcy_m2_mes"
+xValMin = 0 ; yValMin = 0  ; xValMax = 0 ; yValMax = 0
+for(a_standPeriodTable in standPeriodTable_list){
+  xValMax = max(xValMax, subset(a_standPeriodTable, period == "1996_2013")[[variableX]])
+  yValMax = max(yValMax, subset(a_standPeriodTable, period == "1996_2013")[[variableY]])
+}
+xValMax = max(xValMax, yValMax) * 1.06
+yValMax = max(xValMax, yValMax)
+coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
+
+size = 3
+folderPlot = paste0("local_plots/", currentSimulation, "test/")
+for(i in 1:length(standPeriodTable_list)){
+  a_standPeriodTable = standPeriodTable_list[[i]]
+  
+  a_title = title_list[[i]]
+  ggplot(subset(a_standPeriodTable, period == "1996_2013"), 
+         aes_string(x = variableX, y = variableY, color = "composition", label = "code_site_cut", shape = "factor(site)")
+  ) + 
+    # a_title +
+    # facet_grid( . ~ composition) +
+    # geom_label(data = subset(a_standPeriodTable,period == "1996_2013" & code_site %in% outlierList),  aes_string(x = variableX, y = variableY, label = "code_site")) +
+    geom_text_repel(size = 3.5, alpha = 0.7, data =  subset(a_standPeriodTable,period == "1996_2013" & code_site %in% outlierList)) +
+    geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
+    coord_limits+
+    ylab("WVI simulated")+
+    xlab("WVI measured")+
+    scale_color_discrete(name = "Composition",
+                         labels = c("Mixed", "Beech", "Fir"))+
+    scale_shape_manual(name = "Site",
+                       labels = c("Bauges", "Vercors", "Ventoux"),
+                       values = c(15,19,17)) +
+    annotate("text", x= yValMax *0.85, y=yValMax*0.9, label= "1:1", size = 6)
+  
+  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale= 0.6, fileName = paste0("WVI2_nolabel", "_", a_title$title))
+}
+
+
+
+
 
 
 
@@ -1360,28 +1313,23 @@ saveLastGgPlot(folderPlot, plot_width = 960, ratio = 1.25, scale = 0.8, fileName
 
 
 
-# 2024.05.20 Individual growth sim vs mes ----
+# APPENDIX Individual-scale growth simulated vs measured ----
 
+# Filter the line by period and keep core-tree only
 targetPeriod = "1996_2013"
 subTreePeriodTable_E2 = subset(treePeriodTable_E2, period == targetPeriod & goodCarrots)
-# keep only positive values (for log transformation)
+
+# keep only non-null values (for log transformation)
 subTreePeriodTable_E2_positive = subset(subTreePeriodTable_E2, WVIoy_sim > 0 )
 
 # global individual r2 computed with correlation
 cor(subTreePeriodTable_E2$WVIcy_mes, subTreePeriodTable_E2$WVIoy_sim)**2
 cor(log10(subTreePeriodTable_E2_positive$WVIcy_mes), log10(subTreePeriodTable_E2_positive$WVIoy_sim))**2
 
-# global individual r2 computed with linear model
-lm_sim_mes = lm(data = subTreePeriodTable_E2, WVIoy_sim ~ WVIcy_mes)
-sum_lm = summary(lm_sim_mes)
-sum_lm$r.squared
 
-lm_log_sim_mes = lm(data = subTreePeriodTable_E2_positive, log10(WVIoy_sim) ~ log10(WVIcy_mes))
-sum_lm_log = summary(lm_log_sim_mes)
-sum_lm_log$r.squared
-
-
-# Create a table with r2 per site x composition x species
+# Create a table with a linear model per site x composition x species
+# Includes slope, intercept, R2, MAPE
+# And also the same parameter with a linear model on log values
 sites = unique(subTreePeriodTable_E2$site)
 compositions = unique(subTreePeriodTable_E2$composition)
 allspecies = unique(subTreePeriodTable_E2$species)
@@ -1431,16 +1379,11 @@ for(a_site in sites){
 stat_table$ignore = (stat_table$composition == "sp" & stat_table$species == "hetre") | 
   (stat_table$composition == "ph" & stat_table$species == "sapin")
 
-# plot of r2 and r2_on_log
-ggplot(stat_table[!stat_table$ignore, ], aes(r2, r2_on_log)) + geom_point() + xlim(c(0, NA)) + ylim(c(0, NA)) + geom_abline(slope = 1, alpha = 0.2)
-
-# plot of MAPE and MAPE_on_log
-ggplot(stat_table[!stat_table$ignore, ], aes(MAPE, MAPE_on_log, color = composition, shape = site)) + geom_point() + xlim(c(0, NA)) + ylim(c(0, NA)) + geom_abline(slope = 1, alpha = 0.2)
 
 
+# Plot of simulated versus measured tree growth, with R2 and MAPE
 
-# plot with fit and r2
-
+# No log scale
 textSize = 2.7
 ggplot(subTreePeriodTable_E2, 
        aes(x = WVIcy_mes, y = WVIoy_sim, color = species)) + 
@@ -1463,7 +1406,7 @@ ggplot(subTreePeriodTable_E2,
 saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WVI_indiv_period_compo_site_species"))
 
 
-# on log
+# on log scale
 ggplot(subTreePeriodTable_E2_positive, 
        aes(x = (WVIcy_mes), y = (WVIoy_sim), color = species)) + 
   geom_abline(slope = 1, alpha = 0.1) +
@@ -1489,5 +1432,5 @@ ggplot(subTreePeriodTable_E2_positive,
 folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")
 saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale=  0.7, fileName = paste0("WVI_log_indiv_period_compo_site_species_notext"))
 
-
+# Check numerical value of R2, MAPE, slope, etc.
 summary(stat_table[!stat_table$ignore, ])

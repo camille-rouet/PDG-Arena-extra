@@ -1,4 +1,4 @@
-Here are described some of the objects contained in 2023-12-15_goodHeightGoodAlignment.RData
+Here are described some of the objects contained in the .RData file
 
 # Vocabulary
 
@@ -7,7 +7,6 @@ PDG-Light : the previous name of PDG-Arena
 Inventory types :
 E0 = RegdemoMonosp = RM inventories
 E1A = RegdemoPlurisp = R inventories
-E1B = IrregdemoMonosp = irregular and monospecific inventories (not used in the publication)
 E2 = IrregdemoPlurisp = O inventories
 
 
@@ -38,7 +37,7 @@ Additionnaly, the variables WVIy_mes and BAIy_mes are given and do note represen
 
 # Simulation lists
 
-These lists are raw results of the simulation. They may be hard to manipulate; we then suggest to contact the first author of the publication if you want to go further.
+These lists are raw results of the simulation and are not available in the repository. We suggest to contact the first author of the publication if you want to go further.
 
 Lists beginning by 'simuList' contains all the simulation results at a yearly level. The output are described on the CASTANEA documentation, which is not public yet and can be shared on request. First suffixes of simulation lists indicates the inventory type used in the simulation (see vocabulary). Suffix '_st' indicates that results were converted from individual scale to stand scale.
 
