@@ -12,7 +12,7 @@
 
 
 # QUICK CONFIGURATION   --------------------------------------------------------
-load("simulation-data/paper-PDG-Arena/2024-05-07_GMAP_publication.RData")
+load("simulation-data/paper-PDG-Arena/Rdata/2024-05-07_GMAP_publication.RData")
 source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
 
