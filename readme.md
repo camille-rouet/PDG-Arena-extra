@@ -16,17 +16,9 @@ Rouet et al. (2024): PDG-Arena: An eco-physiological model for characterizing tr
 
 Here are the files used in this publication:
 
-> inventories/2023-12-15_GMAP_hauteurMoy_NoSlope_goodAlignment/ 
+> inventories/2024-05-06_GMAP_publication/ 
 
 — This folder contains the virtual inventories used in the simulation
-
-> inventories/2023-12-15_GMAP_hauteurMoygoodAlignment/sites_description/LAI_GMAP.csv
-
-— Data table describing the simulated plots and in particular their Leaf Area Index
-
-> inventories/2023-12-15_GMAP_hauteurMoy_goodAlignment/sites_description/soil_CASTANEA_GMAP.csv
-
-— Data table describing the soil texture of GMAP sites
 
 > scripts/generation-of-inventories/GMAPtoPDG.R 
 
@@ -36,9 +28,9 @@ Here are the files used in this publication:
 
 — The script used to analyse the simulations and plot the result figures
 
-> simulation-data/paper-PDG-Arena/2023-12-15_goodHeightGoodAlignment.RData 
+> simulation-data/paper-PDG-Arena/2024-05-07_GMAP_publication.RData 
 
-— A Rdata file containing the simulation results and the dataset used in the publication (see the accompanying readme)
+— A Rdata file containing the simulation results (see the accompanying readme file)
 
 > simulation-data/paper-PDG-Arena/multiScripts_copy.txt 
 
@@ -48,10 +40,13 @@ Here are the files used in this publication:
 
 — It contains simulation meta-information such as software version
 
-> simulation-data/paper-PDG-Arena/LAI/
+> simulation-data/paper-PDG-Arena/sites_description/LAImax_PROBAV_GMAP.csv
 
-— It contains the values of LAI used in the simulations
+— Data table describing the Leaf Area Index per plot
 
+> simulation-data/paper-PDG-Arena/sites_description/soil_CASTANEA_GMAP.csv
+
+— Data table describing the soil texture of GMAP sites
 
 
 ## License
