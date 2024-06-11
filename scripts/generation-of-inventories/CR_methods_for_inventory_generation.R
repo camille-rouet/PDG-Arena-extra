@@ -1071,7 +1071,7 @@ computeIrregDemoMonoSpInventory = function(treesTable, cellsTable, idSpecies, al
 
 
 
-printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth, cellWidth, plotCrown = FALSE, useRDI = FALSE, ratioOnRadius = 1){
+printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth, cellWidth, plotCrown = FALSE, RDIeffect = FALSE, ratioOnRadius = 1){
   
   if(plotCrown){
     # add crown projection
@@ -1081,12 +1081,14 @@ printInventoryGraph = function(treesTable, folderPath, fileName, forestPlotWidth
     
     # from CastaneaSpecies_2022_05.txt, crownRadius1 and crownRadius2
     treesTable$crownRadius = ifelse(treesTable$speciesName == "hetre", 0.1082, 0.08151) * treesTable$dbh + ifelse(treesTable$speciesName == "hetre", 1.04, 0.69535) 
-    if(useRDI){
+    if(RDIeffect){
       standArea_ha = forestPlotWidth**2 / 10000
       nha = dim(treesTable)[1] / standArea_ha
       meanDbh = mean(treesTable$dbh)
       RDIbeech = max(1, nha / exp(12.95  - 1.941 * log(meanDbh)))
       RDIfir = max(1, nha/ exp(12.621 - 1.779 * log(meanDbh)))
+      
+      cat(paste0("RDIbeech ", RDIbeech, "\nRDIfir ", RDIfir))
       
       # convert to crown area
       treesTable$crownArea = pi*treesTable$crownRadius**2
