@@ -34,32 +34,51 @@ simuListRU100 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simu
 simuListRU100 = cleanSimuListNames(simuListRU100)
 
 
+# Assemble RU50 & RU100
+simuList = list()
+for(a_code_site in names(simuListRU50)){
+  simuList[[a_code_site]] = simuListRU50[[a_code_site]]
+}
+for(a_code_site in names(simuListRU100)){
+  simuList[[a_code_site]] = simuListRU100[[a_code_site]]
+}
 
-# IMPORT SIMULATION DAILY
-fmOutput = 2 # similar to fmSettings.output
-logList = logListList[[fmOutput]]
-keepFilter = "2-PB__1-HETpur"
-
-currentSimulation = "2024-04-10_ONF/"
-simulationFolderGlobal = paste0("2024_simu_article/", currentSimulation)
-folderPlot = paste0("local_plots/", currentSimulation, "bazardeplot/")
-
-dsimuListRU50 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simulationFolderGlobal, "RU50/"),
-                              logList = logList, keepFilter = keepFilter)
-dsimuListRU50 = cleanSimuListNames(dsimuListRU50)
+rm(simuListRU50, simuListRU100)
 
 
-dsimuListRU100 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simulationFolderGlobal, "RU100/"),
-                               logList = logList, keepFilter = keepFilter)
-dsimuListRU100 = cleanSimuListNames(dsimuListRU100)
+# # IMPORT SIMULATION DAILY
+# fmOutput = 2 # similar to fmSettings.output
+# logList = logListList[[fmOutput]]
+# keepFilter = "2-PB__1-HETpur"
+# 
+# currentSimulation = "2024-04-10_ONF/"
+# simulationFolderGlobal = paste0("2024_simu_article/", currentSimulation)
+# folderPlot = paste0("local_plots/", currentSimulation, "bazardeplot/")
+# 
+# dsimuListRU50 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simulationFolderGlobal, "RU50/"),
+#                               logList = logList, keepFilter = keepFilter)
+# dsimuListRU50 = cleanSimuListNames(dsimuListRU50)
+# 
+# 
+# dsimuListRU100 = importSimuList(paste0(workfilesPath, "simulations_capsis/", simulationFolderGlobal, "RU100/"),
+#                                logList = logList, keepFilter = keepFilter)
+# dsimuListRU100 = cleanSimuListNames(dsimuListRU100)
+
+
+
+# Species filtering
+simuList_ph = sfiltering(simuList, fmSpeciesIDs = 3)
+simuList_sp = sfiltering(simuList, fmSpeciesIDs = 1)
 
 
 
 # CONVERT ----
 
 # Stand scale yearly
-simuListRU50_st = getStandScaleSimuList(simuListRU50)
-simuListRU100_st = getStandScaleSimuList(simuListRU100)
+simuList_st = getStandScaleSimuList(simuList)
+simuList_ph_st = getStandScaleSimuList(simuList_ph)
+simuList_sp_st = getStandScaleSimuList(simuList_sp)
+
 
 # Stand scale daily
 dsimuListRU50_st = getStandScaleSimuList(dsimuListRU50)
@@ -71,10 +90,8 @@ dsimuListRU100_st = getStandScaleSimuList(dsimuListRU100)
 # Stand-year table
 
 yvarList = c("GPP", "TR", "REWmin", "LAImaxThisYear", "dbh", "RU_shortage_max")
-standYearTable_RU50 = makeStandYearTableFromStandScale_universal(simuListRU50_st, yvarList)
-standYearTable_RU100 = makeStandYearTableFromStandScale_universal(simuListRU100_st, yvarList)
+standYearTable = makeStandYearTableFromStandScale_universal(simuList_st, yvarList)
 
-standYearTable = rbind(standYearTable_RU50, standYearTable_RU100)
 standYearTable$RU = getRUfromCode_site(standYearTable$code_site)
 standYearTable$RU_shortage_max_relative = standYearTable$RU_shortage_max / standYearTable$RU
 standYearTable$classSize = getClassSizefromCode_site(standYearTable$code_site)
@@ -423,6 +440,6 @@ simuPlots(dsimuListRU50_st$RU50_01_2PB__1HETpur__Narbres_75__Nha_833, tableName 
 
 
 
-# 24.06.2024 Graph par espèce -----
 
+# 24.06.2024 Graph par espèce -----
 
