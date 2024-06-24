@@ -14,12 +14,13 @@ source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
 
 # IMPORT ----
+
 # IMPORT SIMULATIONS YEARLY
 fmOutput = 1 # similar to fmSettings.output
 logList = logListList[[fmOutput]]
 keepFilter = ""
 
-currentSimulation = "2024-04-10_ONF/"
+currentSimulation = "2024-06-22-ONF/"
 simulationFolderGlobal = paste0("2024_simu_article/", currentSimulation)
 folderPlot = paste0("local_plots/", currentSimulation, "bazardeplot/")
 
@@ -56,11 +57,11 @@ dsimuListRU100 = cleanSimuListNames(dsimuListRU100)
 
 # CONVERT ----
 
-# Stand scale
+# Stand scale yearly
 simuListRU50_st = getStandScaleSimuList(simuListRU50)
 simuListRU100_st = getStandScaleSimuList(simuListRU100)
 
-# daily
+# Stand scale daily
 dsimuListRU50_st = getStandScaleSimuList(dsimuListRU50)
 dsimuListRU100_st = getStandScaleSimuList(dsimuListRU100)
 
@@ -77,7 +78,7 @@ standYearTable = rbind(standYearTable_RU50, standYearTable_RU100)
 standYearTable$RU = getRUfromCode_site(standYearTable$code_site)
 standYearTable$RU_shortage_max_relative = standYearTable$RU_shortage_max / standYearTable$RU
 standYearTable$classSize = getClassSizefromCode_site(standYearTable$code_site)
-standYearTable$composition = getCompositionfromCode_site(standYearTable$code_site)
+standYearTable$composition = getCompositionfromCodesite_onf(standYearTable$code_site)
 standYearTable$compositionIndex = getCompositionIndexfromCode_site(standYearTable$code_site)
 standYearTable$isMixed = standYearTable$compositionIndex %in% c(2,3)
 
@@ -85,6 +86,7 @@ standYearTable$beechCompositionRate = ifelse(standYearTable$composition == "HETp
                                              ifelse(standYearTable$composition == "HETsap", 0.70, 
                                                     ifelse(standYearTable$composition == "SAPhet", 0.30, 
                                                            ifelse(standYearTable$composition == "SAPpur", 0,NA))))
+standYearTable$firCompositionRate = 1 - standYearTable$beechCompositionRate
 
 
 standYearTable$nTree = getNTreefromCode_site(standYearTable$code_site)
@@ -105,7 +107,7 @@ standYearTable_meanYear$code_site_bis = NULL
 standYearTable_meanYear$RU = getRUfromCode_site(standYearTable_meanYear$code_site)
 standYearTable_meanYear$RU_shortage_max_relative = standYearTable_meanYear$RU_shortage_max / standYearTable_meanYear$RU
 standYearTable_meanYear$classSize = getClassSizefromCode_site(standYearTable_meanYear$code_site)
-standYearTable_meanYear$composition = getCompositionfromCode_site(standYearTable_meanYear$code_site)
+standYearTable_meanYear$composition = getCompositionfromCodesite_onf(standYearTable_meanYear$code_site)
 standYearTable_meanYear$compositionIndex = getCompositionIndexfromCode_site(standYearTable_meanYear$code_site)
 standYearTable_meanYear$isMixed = standYearTable_meanYear$compositionIndex %in% c(2,3)
 standYearTable_meanYear$nTree = getNTreefromCode_site(standYearTable_meanYear$code_site)
@@ -230,14 +232,14 @@ folderPlot = paste0("local_plots/", currentSimulation, "physiology_basic/")
 
 
 # LAI / nTree and fir proportion drives GPP and TR.
-ggplot(standYearTable_meanYear, aes(x = LAI, y = GPP, color = beechCompositionRate)) + geom_point() + ylim(c(0, NA))
+ggplot(standYearTable_meanYear, aes(x = LAI, y = GPP, color = firCompositionRate)) + geom_point() + ylim(c(0, NA))
 saveGgPlot(folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
            scale = 1, fileName = "GPP_LAI", fileSuffix = ".pdf")
 
-# LAI / nTree drives TR
-ggplot(standYearTable_meanYear, aes(x = LAI, y = TR)) + geom_point() + ylim(c(0, NA))
+# LAI / nTree and fir proportion drives TR
+ggplot(standYearTable_meanYear, aes(x = LAI, y = TR, color = firCompositionRate)) + geom_point() + ylim(c(0, NA))
 saveGgPlot(folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
@@ -285,20 +287,12 @@ saveGgPlot(folderPlot,
            ratio = 3/2,
            scale = 1, fileName = "RU_shMax_RU", fileSuffix = ".pdf")
 
-# Less RY (hydric stress) increases relative maximum water shortage (more close to the limit)
+# Less RU (hydric stress) increases relative maximum water shortage (more close to the limit)
 ggplot(standYearTable_meanYear, aes(x = as.factor(RU), y = RU_shortage_max_relative, color = composition)) + geom_boxplot() + facet_grid( . ~ .) + ylim(c(0, NA))
 saveGgPlot(folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
            scale = 1, fileName = "RU_shMaxRel_RU", fileSuffix = ".pdf")
-
-
-# Plot advanced results
-# ggplot(standYearTable_meanYear, aes(x = composition, y = GPPperLAI, color = as.factor(RU))) + geom_point() + ylim(c(0, NA)) + facet_grid(classSize ~ nTree)
-
-# ggplot(standYearTable_meanYear, aes(x = composition, y = TR, color = as.factor(RU))) + geom_point() + ylim(c(0, NA))  + facet_grid(classSize ~ nTree)
-
-
 
 
 
@@ -307,7 +301,7 @@ saveGgPlot(folderPlot,
 
 
 # PLOTS NBE ----
-folderPlot = paste0("local_plots/", currentSimulation, "results/2024-04-20/")
+folderPlot = paste0("local_plots/", currentSimulation, "results/2024-06-24/")
 
 # H1.1 et H1.2 : Evaluation of NBE on growth and transpiration
 # NBE is globally positive on growth (3.5%) and transpiration (10%). NBE transpiration is more pronounced, especially on sapin-dominant mixture
@@ -343,6 +337,7 @@ ggplot(subset(standYearTable_meanYear, isMixed), aes(x = NBE_tr, y = NBE_gpp, co
 
 # NBE is not exactly identical on transpiration and RU shortage max
 ggplot(subset(standYearTable_meanYear, isMixed), aes(x = NBE_ru_shortage_max, y = NBE_tr, color = composition)) + geom_point() + xlim(c(0, NA)) + ylim(c(0, NA))
+
 
 
 # H2.1.a La densité augmente le NBE-growth sur les hetre-dominant, et réduit le NBE-growth sur les sapin-dominant
@@ -419,7 +414,15 @@ saveGgPlot(folderPlot,
 
 
 
+
 # 10.04.2024 check daily simulation ----
 
 simuPlots(dsimuListRU50_st$RU50_01_2PB__1HETpur__Narbres_75__Nha_833, tableName = "d", xvar = "d",
           yvar = waterDailyVariables)
+
+
+
+
+# 24.06.2024 Graph par espèce -----
+
+
