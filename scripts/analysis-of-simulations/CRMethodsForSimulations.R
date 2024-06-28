@@ -3935,7 +3935,7 @@ makeStandYearTableFromStandScale = function(standSimulist, standYearTable_GMAP){
 
 
 # Based on a stand scale simulation list, makes a table with one line per stand-year
-# yvarList is the list of yearlyResults variabels to store
+# yvarList is the list of yearlyResults variables to store
 # This method is not dependent on a GMAP context
 makeStandYearTableFromStandScale_universal = function(standSimulist, yvarList){
   code_site_list = names(standSimulist)
