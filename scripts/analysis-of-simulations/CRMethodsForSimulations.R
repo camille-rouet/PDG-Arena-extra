@@ -3296,7 +3296,7 @@ gg_color_hue <- function(n) {
 
 
 
-saveGgPlot = function(plot = NULL, plotfolderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".pdf"){
+saveGgPlot = function(plot = NULL, folderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".pdf"){
   
   
   if(!dir.exists(folderPlot)){
