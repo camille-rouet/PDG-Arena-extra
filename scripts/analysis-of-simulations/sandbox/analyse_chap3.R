@@ -20,7 +20,7 @@ fmOutput = 1 # similar to fmSettings.output
 logList = logListList[[fmOutput]]
 keepFilter = ""
 
-currentSimulation = "2024-06-22-ONF/"
+currentSimulation = "2024-07-12-ONF/"
 simulationFolderGlobal = paste0("2024_simu_article/", currentSimulation)
 folderPlot = paste0("local_plots/", currentSimulation, "bazardeplot/")
 
@@ -351,9 +351,9 @@ for(i in 1:dim(standYearTable_meanYear)[1]){
 folderPlot = paste0("local_plots/", currentSimulation, "allSimuCheck_yearly/")
 yvars = c("Gha", "GPP", "NPP", "LAImaxThisYear", "RU_shortage_max", "BiomassOfReservesBeforeRefill")
 
-for(i in 1:length(simuListRU50_st)){
-  name_simu = names(simuListRU50_st)[i]
-  aplot = simuPlots(simuListRU50_st[[i]], tableName = "y", xvar = "y", yvar = yvars)
+for(i in 1:length(simuList_st)){
+  name_simu = names(simuList_st)[i]
+  aplot = simuPlots(simuList_st[[i]], tableName = "y", xvar = "y", yvar = yvars)
 
   saveGgPlot(aplot, folderPlot,
              plot_height = 960, plot_width = NULL,
@@ -362,19 +362,6 @@ for(i in 1:length(simuListRU50_st)){
   rm(aplot)
   rm(name_simu)
 }
-
-for(i in 1:length(simuListRU100_st)){
-  name_simu = names(simuListRU100_st)[i]
-  aplot = simuPlots(simuListRU100_st[[i]], tableName = "y", xvar = "y", yvar = yvars)
-
-  saveGgPlot(aplot, folderPlot,
-             plot_height = 960, plot_width = NULL,
-             ratio = 4/3,
-             scale = 1, fileName = name_simu, fileSuffix = ".pdf")
-  rm(aplot)
-  rm(name_simu)
-}
-
 
 
 
@@ -388,7 +375,7 @@ folderPlot = paste0("local_plots/", currentSimulation, "simulation_plan_check/")
 # gha increases with classSize and nTree (density as equal classSize)
 ggplot(subset(standYearTable_meanYear, year == standYearTable_meanYear$year[1] & RU == 50), aes(y = LAI, x = nTree, size = gha)) + geom_point() + facet_grid(classSize ~ composition)
 
-saveGgPlot(folderPlot, 
+saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 4/3,
            scale = 1, fileName = "LAI_nTree", fileSuffix = ".pdf")
@@ -396,7 +383,7 @@ saveGgPlot(folderPlot,
 # nha (stem/m2) decreases with on classSize (which decreases standArea and maintain nTree) and increases with nTree (density for the same classSize) 
 ggplot(subset(standYearTable_meanYear, year == standYearTable_meanYear$year[1] & RU == 50), aes(y = nha, x = nTree, size = classSize, color = standArea_m2)) + geom_point() + facet_grid( ~ composition)
 # ggplot(subset(standYearTable_meanYear, year == standYearTable_meanYear$year[1] & RU == 50), aes(y = nha, x = nTree, size = standArea_m2)) + geom_point() + facet_grid(classSize ~ composition)
-saveGgPlot(folderPlot, 
+saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 4/3,
            scale = 1, fileName = "nha_nTree", fileSuffix = ".pdf")
@@ -404,7 +391,7 @@ saveGgPlot(folderPlot,
 # class Size increases gha and lower nha, and has no effect on LAI and nTree
 # (LAI is linked with gha and nha but ultimately relies on nTree, aka density at equal classSize)
 ggplot(subset(standYearTable_meanYear, year == standYearTable_meanYear$year[1] & RU == 50), aes(y = gha, x = nha, size = LAI, color = nTree)) + geom_point() + facet_grid(composition ~ classSize)
-saveGgPlot(folderPlot, 
+saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 4/3,
            scale = 1, fileName = "gha_nha", fileSuffix = ".pdf")
@@ -412,7 +399,7 @@ saveGgPlot(folderPlot,
 # gha is approximately the same for each composition, gha depends on density (nTree) and class size
 ggplot(subset(standYearTable_meanYear, year == standYearTable_meanYear$year[1] & RU == 50), aes(y = gha, x = nTree, size = classSize)) + geom_point() + facet_grid( ~ composition)
 
-saveGgPlot(folderPlot, 
+saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 4/3,
            scale = 1, fileName = "gha_nTree", fileSuffix = ".pdf")
