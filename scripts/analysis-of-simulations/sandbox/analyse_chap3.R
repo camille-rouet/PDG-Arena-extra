@@ -881,15 +881,68 @@ simuPlots(dsimuListRU50_st$RU50_01_2PB__1HETpur__Narbres_75__Nha_833, tableName 
 
 # test ----
 
-for(i in 1:length(simuList)){
-  yrRes1 = subset(simuList[[i]]$yearlyResults, year == 2011)
-  table_sp = table(yrRes1$species)
-  names(table_sp) = NULL
-  prop_sp = table_sp / sum(table_sp)
-  
-  if(length(prop_sp) > 1){
-    # cat("\nCoun: ", table_sp)
-    cat("\nProp: ", round(prop_sp * 100, 2))
-  }
+standYearTable_meanYear_mixed_bm = subset(standYearTable_meanYear_mixed, classSize == "3BM")
+
+standYearTable_meanYear_mixed_bm$waterStressed = standYearTable_meanYear_mixed_bm$RU == 50
+ggplot(standYearTable_meanYear_mixed_bm, aes(y = 1000 * NBE_GPP, x = as.factor(nTree), color = composition)) + geom_boxplot() + 
+  expand_limits(x = 0) + expand_limits(y = 0) +
+  facet_grid(. ~ waterStressed)
+
+# linear model
+# cela permet d'évaluer tous les effets et leurs interactions
+lm1 = lm(data = standYearTable_meanYear_mixed_bm, 1000 * NBE_GPP ~ composition + waterStressed * as.factor(nTree))
+summary(lm1)
+mean(subset(standYearTable_meanYear_mixed_bm, composition == "SAPhet")$NBE_TR) / mean(subset(standYearTable_meanYear_mixed_bm, composition == "HETsap")$NBE_TR)
+                                                         
+
+
+# Calcul de variation de NBE à partir d'une simulation de référence : RU100, Densité moyenne
+# (une simu de référence pour hetre dominant et pour sapin dominant)
+refSimuBeechDom = subset(standYearTable_meanYear_mixed_bm, RU == 100 & nTree == 54 & composition == "HETsap")
+refSimuFirDom = subset(standYearTable_meanYear_mixed_bm, RU == 100 & nTree == 54 & composition == "SAPhet")
+
+standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom = standYearTable_meanYear_mixed_bm
+standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom = standYearTable_meanYear_mixed_bm
+numericalCol = vapply(standYearTable_meanYear_mixed_bm[1, ], FUN = function(x) is.numeric(x), FUN.VALUE = T, USE.NAMES = F)
+numericalCol = ! colnames(standYearTable_meanYear_mixed_bm) %in% c("code_site", "classSize", "composition", "isMixed", "year", "LAI", "dbh", "RU",
+                                                                               "compositionIndex", "beechCompositionRate", "firCompositionRate",
+                                                                               "nTree", "nha", "standArea_m2", "nTreeSp", "gha")
+
+for(i in 1:dim(standYearTable_meanYear_mixed_bm)[1]){
+  standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom[i, numericalCol] = round((standYearTable_meanYear_mixed_bm[i, numericalCol] / refSimuBeechDom[, numericalCol] - 1) * 100, 1)
+  standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom[i, numericalCol] = round((standYearTable_meanYear_mixed_bm[i, numericalCol] / refSimuFirDom[, numericalCol] - 1) * 100, 1)
 }
 
+variables = c("nTree", "RU", "NBE_GPP", "NBE_TR", "NBE_ABS", "GPP", "TR", "ABS", "REWmin")
+variables_beechfir = c("nTree", "NBE_GPP_fir", "NBE_TR_fir", "NBE_ABS_fir", "GPP_fir", "TR_fir", "ABS_fir", "REWmin", "NBE_GPP_beech", "NBE_TR_beech", "NBE_ABS_beech", "GPP_beech", "TR_beech", "ABS_beech")
+variables_fir = c("nTree", "RU", "NBE_GPP", "NBE_TR", "NBE_ABS", "GPP", "TR", "ABS", "REWmin", )
+
+
+# Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas HETsap) (en %)
+selection1 = standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$composition == "HETsap" &
+  (standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$nTree == 54)
+standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom[selection1,
+                                                            variables]
+
+
+# Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas SAPhet) (en %)
+selection2 = standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$composition == "SAPhet" &
+  (standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$nTree == 54)
+standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom[selection2,
+                                                          variables]
+
+
+
+# Check effect on species
+# Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas HETsap) (en %)
+selection1 = standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$composition == "HETsap" &
+  (standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$nTree == 54)
+standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom[selection1,
+                                                            variables_beechfir]
+
+
+# Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas SAPhet) (en %)
+selection2 = standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$composition == "SAPhet" &
+  (standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$nTree == 54)
+standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom[selection2,
+                                                          variables_beechfir]
