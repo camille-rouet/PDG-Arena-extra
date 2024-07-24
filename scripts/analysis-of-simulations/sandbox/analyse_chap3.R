@@ -6,11 +6,12 @@ rm(list = ls()) ; gc() # clear
 capsisPath = ""
 varPath = paste0(capsisPath, "var/") 
 workfilesPath = ""
-PROGRAM_ON_SERVER = FALSE
+PROGRAM_ON_SERVER = TRUE
 
 source("scripts/define_folders.R")
 source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
 
+library(ggpattern)
 
 
 # IMPORT YEARLY ----
@@ -180,8 +181,7 @@ standYearTable_sp = makeStandYearTableWithMetaInfo(simuList_sp_st, simuList_sp, 
 
 
 
-# Stand-year table, average for all years
-
+# Make a stand-year table with average value for all years
 computeMeanStandYearTable = function(standYearTable){
   
   standYearTable_meanYear = aggregate(standYearTable, FUN = mean, by = list(code_site_bis = standYearTable$code_site))
@@ -214,7 +214,7 @@ standYearTable_sp_meanYear = computeMeanStandYearTable(standYearTable_sp)
 
 
 
-# Assemble GPP and TR variables for each species in standYearTable_meanYear
+# Assemble GPP, TR and ABS variables for each species in standYearTable_meanYear
 standYearTable_meanYear$GPP_beech = 0
 standYearTable_meanYear$GPPperLAI_beech = 0
 standYearTable_meanYear$GPPperGha_beech = 0
@@ -237,7 +237,7 @@ standYearTable_meanYear$ABSperGha_fir = 0
 standYearTable_meanYear$RU_shortage_max_beech = 0
 standYearTable_meanYear$RU_shortage_max_fir = 0
 
-
+# For each site
 for(a_code_site in standYearTable_ph_meanYear$code_site){
   sel1 = standYearTable_meanYear$code_site == a_code_site
   sel2 = standYearTable_ph_meanYear$code_site == a_code_site
@@ -281,11 +281,13 @@ for(a_code_site in standYearTable_sp_meanYear$code_site){
 # correct code_site
 standYearTable_meanYear$code_site = vapply(standYearTable_meanYear$code_site, FUN = function(x) paste0(strsplit(x, split = "_")[[1]][-1][-1], collapse = "_"), FUN.VALUE = "", USE.NAMES = F)
 
+# add label for water stressed
+standYearTable_meanYear$waterStressed = ifelse(standYearTable_meanYear$RU == 50, "Water stressed", "Normal")
+
 
 
 
 # Compute NBE (Net Biodiversity Effects) ----
-
 
 NBE_variables = c("RU_shortage_max_relative", "REWmin", 
                   "RU_shortage_max", "RU_shortage_max_beech", "RU_shortage_max_fir",
@@ -343,6 +345,12 @@ for(i in 1:dim(standYearTable_meanYear)[1]){
     
   }
 }
+
+
+# Filter final table
+standYearTable_meanYear_mixed = subset(standYearTable_meanYear, isMixed)
+standYearTable_meanYear_mixed_bm = subset(standYearTable_meanYear_mixed, classSize == "3BM")
+
 
 
 
@@ -557,6 +565,8 @@ saveGgPlot(folder = folderPlot,
 
 
 
+
+
 # PLOTS NBE ----
 folderPlot = paste0("local_plots/", currentSimulation, "NBE/")
 
@@ -619,12 +629,13 @@ for(variableTypeSuffix in c("", "perGha", "perLAI")){
     
     # RU 100 to 50
     ggplot(standYearTable_meanYear_mixed) +
-      # xlab(NBE_ABS_var) + ylab(NBE_GPP_var) +
-      geom_point(aes(x = NBE_RU_shortage_max_tmp, y = NBE_GPP_tmp, color = composition, size = nTree), shape =  10) + expand_limits(x = 0) + expand_limits(y = 0) +
+      xlab(NBE_ABS_var) + ylab(NBE_GPP_var) +
+      geom_point(aes(x = NBE_ABS_tmp, y = NBE_GPP_tmp, color = composition, size = nTree), shape =  10) +
+      expand_limits(x = 0) + expand_limits(y = 0) +
       scale_size_continuous(range = c(2,5)) +
       theme(legend.position = "right") + 
       geom_segment(data = standYearTable_meanYear_mixed_RU_wide, 
-                   aes(x = NBE_RU_shortage_max_tmp_100, y = NBE_GPP_tmp_100, xend = NBE_RU_shortage_max_tmp_50, yend = NBE_GPP_tmp_50),
+                   aes(x = NBE_ABS_tmp_100, y = NBE_GPP_tmp_100, xend = NBE_ABS_tmp_50, yend = NBE_GPP_tmp_50),
                    arrow = arrow(length = unit(0.2, "cm")), 
                    color = "black") 
     
@@ -868,27 +879,64 @@ close(pb)
 
 
 
-# 10.04.2024 check daily simulation ----
 
-simuPlots(dsimuListRU50_st$RU50_01_2PB__1HETpur__Narbres_75__Nha_833, tableName = "d", xvar = "d",
-          yvar = waterDailyVariables)
+# Effet propres des variables ----
+
+# a. Plot effet propres sur NBE
+variables = c("NBE_GPP", "NBE_TR", "NBE_ABS", "GPP", "TR", "ABS", "REWmin",  
+              "NBE_GPP_fir", "NBE_TR_fir", "NBE_ABS_fir", "GPP_fir", "TR_fir", "ABS_fir", 
+              "NBE_GPP_beech", "NBE_TR_beech", "NBE_ABS_beech", "GPP_beech", "TR_beech", "ABS_beech",
+              "NBE_GPPperLAI", "NBE_TRperLAI", "NBE_ABSperLAI", "GPPperLAI", "TRperLAI", "ABSperLAI", "REWmin",  
+              "NBE_GPPperLAI_fir", "NBE_TRperLAI_fir", "NBE_ABSperLAI_fir", "GPPperLAI_fir", "TRperLAI_fir", "ABSperLAI_fir", 
+              "NBE_GPPperLAI_beech", "NBE_TRperLAI_beech", "NBE_ABSperLAI_beech", "GPPperLAI_beech", "TRperLAI_beech", "ABSperLAI_beech",
+              "NBE_GPPperGha", "NBE_TRperGha", "NBE_ABSperGha", "GPPperGha", "TRperGha", "ABSperGha", "REWmin",  
+              "NBE_GPPperGha_fir", "NBE_TRperGha_fir", "NBE_ABSperGha_fir", "GPPperGha_fir", "TRperGha_fir", "ABSperGha_fir", 
+              "NBE_GPPperGha_beech", "NBE_TRperGha_beech", "NBE_ABSperGha_beech", "GPPperGha_beech", "TRperGha_beech", "ABSperGha_beech")
+for(var in variables){
+  mult = 1
+  if(grepl(var, pattern = "NBE")){
+    mult = 100
+  }
+  
+  folderPlotA = paste0("local_plots/", currentSimulation, "variables_effets_propres/")
+  folderPlotB = paste0(folderPlotA, "parComposition/")
+  if(grepl(var, pattern = "perLAI")){
+    folderPlotA = paste0(folderPlotA, "perLAI/")
+    folderPlotB = paste0(folderPlotB, "perLAI/")
+  }else if(grepl(var, pattern = "perGha")){
+    folderPlotA = paste0(folderPlotA, "perGha/")
+    folderPlotB = paste0(folderPlotB, "perGha/")
+  }
+  
+  standYearTable_meanYear_mixed_bm$var_tmp = standYearTable_meanYear_mixed_bm[[var]]
+  ggplot(standYearTable_meanYear_mixed_bm, aes(y = mult * var_tmp, x = as.factor(nTree), color = composition)) + geom_point() + 
+    ylab(var) +
+    expand_limits(x = 0) + expand_limits(y = 0) +
+    facet_grid(. ~ waterStressed)
+  saveGgPlot(folderPlot = folderPlotA, 
+             plot_height = 480, plot_width = NULL,
+             ratio = 3/2,
+             scale = 1, fileName = paste0(var), fileSuffix = ".pdf")
+  
+  
+  if(grepl(var, pattern = "NBE")){
+    next  
+  }
+  standYearTable_meanYear$var_tmp = standYearTable_meanYear[[var]]
+  ggplot(subset(standYearTable_meanYear, classSize == "3BM"), aes(x = composition, y = var_tmp, color = composition, size = nTree)) +
+    ylab(var) +
+    geom_jitter(width = 0.15) + 
+    expand_limits(y = 0) + facet_grid(. ~ waterStressed)
+  saveGgPlot(folderPlot = folderPlotB, 
+             plot_height = 480, plot_width = NULL,
+             ratio = 3/2,
+             scale = 1, fileName = paste0(var, "_perComposition"), fileSuffix = ".pdf")
+}
 
 
 
 
-
-
-
-# test ----
-
-standYearTable_meanYear_mixed_bm = subset(standYearTable_meanYear_mixed, classSize == "3BM")
-
-standYearTable_meanYear_mixed_bm$waterStressed = standYearTable_meanYear_mixed_bm$RU == 50
-ggplot(standYearTable_meanYear_mixed_bm, aes(y = 1000 * NBE_GPP, x = as.factor(nTree), color = composition)) + geom_boxplot() + 
-  expand_limits(x = 0) + expand_limits(y = 0) +
-  facet_grid(. ~ waterStressed)
-
-# linear model
+# b. Modèle linéaire
 # cela permet d'évaluer tous les effets et leurs interactions
 lm1 = lm(data = standYearTable_meanYear_mixed_bm, 1000 * NBE_GPP ~ composition + waterStressed * as.factor(nTree))
 summary(lm1)
@@ -896,53 +944,367 @@ mean(subset(standYearTable_meanYear_mixed_bm, composition == "SAPhet")$NBE_TR) /
                                                          
 
 
-# Calcul de variation de NBE à partir d'une simulation de référence : RU100, Densité moyenne
+# c. Calcul de variation de NBE à partir d'une simulation de référence : RU100, Densité moyenne
 # (une simu de référence pour hetre dominant et pour sapin dominant)
 refSimuBeechDom = subset(standYearTable_meanYear_mixed_bm, RU == 100 & nTree == 54 & composition == "HETsap")
 refSimuFirDom = subset(standYearTable_meanYear_mixed_bm, RU == 100 & nTree == 54 & composition == "SAPhet")
 
-standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom = standYearTable_meanYear_mixed_bm
-standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom = standYearTable_meanYear_mixed_bm
+standYearTable_meanYear_relativeto_refSimuBeechDom = standYearTable_meanYear_mixed_bm
+standYearTable_meanYear_relativeto_refSimuFirDom = standYearTable_meanYear_mixed_bm
 numericalCol = vapply(standYearTable_meanYear_mixed_bm[1, ], FUN = function(x) is.numeric(x), FUN.VALUE = T, USE.NAMES = F)
 numericalCol = ! colnames(standYearTable_meanYear_mixed_bm) %in% c("code_site", "classSize", "composition", "isMixed", "year", "LAI", "dbh", "RU",
                                                                                "compositionIndex", "beechCompositionRate", "firCompositionRate",
-                                                                               "nTree", "nha", "standArea_m2", "nTreeSp", "gha")
-
+                                                                               "nTree", "nha", "standArea_m2", "nTreeSp", "gha", "waterStressed")
+# Pour chaque simulation et variable, on divise le résultat par celui de la valeur de la simulation de référence
 for(i in 1:dim(standYearTable_meanYear_mixed_bm)[1]){
-  standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom[i, numericalCol] = round((standYearTable_meanYear_mixed_bm[i, numericalCol] / refSimuBeechDom[, numericalCol] - 1) * 100, 1)
-  standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom[i, numericalCol] = round((standYearTable_meanYear_mixed_bm[i, numericalCol] / refSimuFirDom[, numericalCol] - 1) * 100, 1)
+  standYearTable_meanYear_relativeto_refSimuBeechDom[i, numericalCol] = round((standYearTable_meanYear_mixed_bm[i, numericalCol] / refSimuBeechDom[, numericalCol] - 1) * 100, 1)
+  standYearTable_meanYear_relativeto_refSimuFirDom[i, numericalCol] = round((standYearTable_meanYear_mixed_bm[i, numericalCol] / refSimuFirDom[, numericalCol] - 1) * 100, 1)
 }
 
+# selection de variables à afficher
 variables = c("nTree", "RU", "NBE_GPP", "NBE_TR", "NBE_ABS", "GPP", "TR", "ABS", "REWmin")
 variables_beechfir = c("nTree", "NBE_GPP_fir", "NBE_TR_fir", "NBE_ABS_fir", "GPP_fir", "TR_fir", "ABS_fir", "REWmin", "NBE_GPP_beech", "NBE_TR_beech", "NBE_ABS_beech", "GPP_beech", "TR_beech", "ABS_beech")
-variables_fir = c("nTree", "RU", "NBE_GPP", "NBE_TR", "NBE_ABS", "GPP", "TR", "ABS", "REWmin", )
 
 
 # Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas HETsap) (en %)
-selection1 = standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$composition == "HETsap" &
-  (standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$nTree == 54)
-standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom[selection1,
+selection1 = standYearTable_meanYear_relativeto_refSimuBeechDom$composition == "HETsap" &
+  (standYearTable_meanYear_relativeto_refSimuBeechDom$RU == 100 | standYearTable_meanYear_relativeto_refSimuBeechDom$nTree == 54)
+standYearTable_meanYear_relativeto_refSimuBeechDom[selection1,
                                                             variables]
 
 
 # Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas SAPhet) (en %)
-selection2 = standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$composition == "SAPhet" &
-  (standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$nTree == 54)
-standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom[selection2,
+selection2 = standYearTable_meanYear_relativeto_refSimuFirDom$composition == "SAPhet" &
+  (standYearTable_meanYear_relativeto_refSimuFirDom$RU == 100 | standYearTable_meanYear_relativeto_refSimuFirDom$nTree == 54)
+standYearTable_meanYear_relativeto_refSimuFirDom[selection2,
                                                           variables]
 
 
 
 # Check effect on species
 # Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas HETsap) (en %)
-selection1 = standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$composition == "HETsap" &
-  (standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom$nTree == 54)
-standYearTable_meanYear_mixed_bm_relativeto_refSimuBeechDom[selection1,
+selection1 = standYearTable_meanYear_relativeto_refSimuBeechDom$composition == "HETsap" &
+  (standYearTable_meanYear_relativeto_refSimuBeechDom$RU == 100 | standYearTable_meanYear_relativeto_refSimuBeechDom$nTree == 54)
+standYearTable_meanYear_relativeto_refSimuBeechDom[selection1,
                                                             variables_beechfir]
 
 
 # Effet unique de la densité forte, de la densité faible, de la RU50 sur la NBE (cas SAPhet) (en %)
-selection2 = standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$composition == "SAPhet" &
-  (standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$RU == 100 | standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom$nTree == 54)
-standYearTable_meanYear_mixed_bm_relativeto_refSimuFirDom[selection2,
+selection2 = standYearTable_meanYear_relativeto_refSimuFirDom$composition == "SAPhet" &
+  (standYearTable_meanYear_relativeto_refSimuFirDom$RU == 100 | standYearTable_meanYear_relativeto_refSimuFirDom$nTree == 54)
+standYearTable_meanYear_relativeto_refSimuFirDom[selection2,
                                                           variables_beechfir]
+
+
+# Résumé : on a les effets isolés (par rapport à une simulation de référence) de la densité et l'effet de la RU 
+# sur les valeurs de GPP, TR et ABS ainsi que sur les effets mélanges sur ces variables
+# On a aussi les valeurs pour chaque espèce
+# On a un  effet pour les mélanges à hêtre dominant, et un autre pour les mélanges à sapins dominants
+
+
+
+
+
+
+# Check NBE ~ RU par espece ----
+summary(standYearTable_meanYear$GPP - (standYearTable_meanYear$GPP_beech + standYearTable_meanYear$GPP_fir) )
+
+
+
+# SimuRef is
+# aComposition is HETsap or SAPhet
+getValues = function(fourSimuRef, aComposition){
+  
+  if(aComposition == "HETsap"){
+    compositionRates = c(0.67, 0.33)
+  }else{
+    compositionRates = c(0.33, 0.67)
+  }
+  
+  # Global
+  GPP = subset(fourSimuRef, composition == aComposition)$GPP
+  GPP_pred =  compositionRates[1] * subset(fourSimuRef, composition == "HETpur")$GPP + compositionRates[2] *  subset(fourSimuRef, composition == "SAPpur")$GPP
+  NBE_GPP = ( GPP - GPP_pred ) / GPP_pred
+  
+  NBE_GPP
+  subset(fourSimuRef, composition == aComposition)$NBE_GPP
+  
+  # Beech
+  GPP_beech = subset(fourSimuRef, composition == aComposition)$GPP_beech
+  GPP_pred_beech =  compositionRates[1] * subset(fourSimuRef, composition == "HETpur")$GPP_beech + compositionRates[2] *  subset(fourSimuRef, composition == "SAPpur")$GPP_beech
+  NBE_GPP_beech = ( GPP_beech - GPP_pred_beech ) / GPP_pred_beech
+  
+  NBE_GPP_beech
+  subset(fourSimuRef, composition == aComposition)$NBE_GPP_beech
+  
+  
+  # Fir
+  GPP_fir = subset(fourSimuRef, composition == aComposition)$GPP_fir
+  GPP_pred_fir =  compositionRates[1] * subset(fourSimuRef, composition == "HETpur")$GPP_fir + compositionRates[2] *  subset(fourSimuRef, composition == "SAPpur")$GPP_fir
+  NBE_GPP_fir = ( GPP_fir - GPP_pred_fir ) / GPP_pred_fir
+  
+  NBE_GPP_fir
+  subset(fourSimuRef, composition == aComposition)$NBE_GPP_fir
+  
+  
+  tab = tibble(composition= aComposition,
+               RU = unique(fourSimuRef$RU),
+               nTree = unique(fourSimuRef$nTree),
+               GPP = c(GPP), 
+               GPP_pred = c(GPP_pred),
+               NBE_GPP = c(NBE_GPP), 
+               GPP_beech = c(GPP_beech), 
+               GPP_pred_beech = c(GPP_pred_beech),
+               NBE_GPP_beech = c(NBE_GPP_beech), 
+               GPP_fir = c(GPP_fir), 
+               GPP_pred_fir = c(GPP_pred_fir),
+               NBE_GPP_fir = c(NBE_GPP_fir))
+}
+
+
+
+# Donner une RU et une densité pour comparer les résultats
+tab_RU100 = getValues(subset(standYearTable_meanYear, RU == 100 & nTree == 30 & classSize == "3BM"), "HETsap")
+tab_RU50 = getValues(subset(standYearTable_meanYear, RU == 100 & nTree == 30 & classSize == "3BM"), "SAPhet")
+
+rbind(tab_RU100, tab_RU50)
+
+
+
+
+
+# Bar plot ----
+
+plot_variables = c("NBE_GPP", "NBE_TR", "NBE_ABS")
+pivot_variables = unique(c(plot_variables, 
+                           "GPP", "TR", "ABS", "NBE_GPP", "NBE_TR", "NBE_ABS",
+                          "GPP_beech", "TR_beech", "ABS_beech", "NBE_GPP_beech", "NBE_TR_beech", "NBE_ABS_beech", 
+                          "GPP_fir", "TR_fir", "ABS_fir", "NBE_GPP_fir", "NBE_TR_fir", "NBE_ABS_fir"))
+standYearTable_meanYear_mixed_bm_longer = pivot_longer(standYearTable_meanYear_mixed_bm[, c("nTree", "RU", "composition", pivot_variables)], cols = pivot_variables, names_to = "variable", values_to = "value")
+
+# Add a species column
+standYearTable_meanYear_mixed_bm_longer$species = sub(".*_(beech|fir).*", "\\1", standYearTable_meanYear_mixed_bm_longer$variable)
+
+# Set species at "all" if not specifically beech or fir
+standYearTable_meanYear_mixed_bm_longer$species[!standYearTable_meanYear_mixed_bm_longer$species %in% c("beech", "fir")]  = "all"
+
+# Rename the variable column to get reed of species
+standYearTable_meanYear_mixed_bm_longer = mutate(.data = standYearTable_meanYear_mixed_bm_longer, 
+                                                 variable = sub("_(beech|fir)", "", variable))
+
+
+# Ajouter une colonne pour la taille des triangles basée sur l'indice
+standYearTable_meanYear_mixed_bm_longer$triangle_size <- as.numeric(factor(standYearTable_meanYear_mixed_bm_longer$nTree, levels = c(30, 54, 75)))
+
+
+
+
+
+
+
+# Create a beautiful barplot
+# VerticalXX input should be use only if plot_variables are POSITIVES
+barPlot = function(title, standYearTable_meanYear_mixed_bm_longer, plot_variables, alphaVar, alphaVarName, alphaVarLabels, 
+                   verticalVariable = NULL, verticalVariableUpDownLabels = NULL, y_ticks = NULL, 
+                   hashInsteadOfAlpha = F, addPoint = F, hashType = "circle", inverseHashDensity = F,
+                   addOutline = F){
+  
+  standYearTable_meanYear_mixed_bm_longer$alphaVariable = standYearTable_meanYear_mixed_bm_longer[[alphaVar]]
+  y_ticks_labels = y_ticks
+  
+  # Assign a negative value if data of verticalVariable should be display below
+  if(!is.null(verticalVariable)){
+    standYearTable_meanYear_mixed_bm_longer$value = standYearTable_meanYear_mixed_bm_longer$value * ifelse(standYearTable_meanYear_mixed_bm_longer[[verticalVariable]] == names(verticalVariableUpDownLabels)[1], 1, -1)
+    y_ticks_labels = paste0("+ ", abs(y_ticks))
+  }
+  
+  subtable = subset(standYearTable_meanYear_mixed_bm_longer, variable %in% plot_variables)
+  
+  # (optional) Use pattern instead of alpha to highlight a variable
+  if(hashInsteadOfAlpha){
+    theAes = aes(y = 100 * value, x = as.factor(nTree), fill = variable, pattern_density = as.factor(alphaVariable))
+    theGeomCol = geom_col_pattern(position = "dodge", width = 0.7, alpha = 0.4,
+                                  pattern = hashType, pattern_size = 0, pattern_fill = "#414141", pattern_angle = -60, 
+                                  pattern_spacing = 0.03, pattern_alpha = 0.4, color = if(addOutline){"#414141"}else{rgb(0,0,0,0)}, size = if(addOutline){0.2}else{0})
+    densities = c(0.5, 0)
+    pattern_opt = scale_pattern_density_discrete(range = ifelse(rep(inverseHashDensity, 2), rev(densities), densities), 
+                                                 name = alphaVarName, labels = alphaVarLabels)
+    alpha_opt = NULL
+  }else{
+    # Normal
+    theAes = aes(y = 100 * value, x = as.factor(nTree), fill = variable, alpha = as.factor(alphaVariable), shape = as.factor(alphaVariable))
+    theGeomCol = geom_col(position = "dodge", width = 0.7, color = if(addOutline){"#414141"}else{rgb(0,0,0,0)}, size = if(addOutline){0.2}else{0})
+    pattern_opt = NULL
+    alpha_opt = scale_alpha_manual(values = c(0.4, 1), 
+                       name = alphaVarName, labels = alphaVarLabels)
+  }
+  
+  # (optional) Add points at the edge of the bars
+  if(addPoint){
+    colorPoint = rgb(0.4,0.4,0.4)
+    shapesPoint = c(1, 13)
+    theGeomPoint = geom_point(show.legend = F, theAes, position=position_dodge(width= 0.7), color = colorPoint)
+    shape_opt = scale_shape_manual(values = shapesPoint)
+  }else{
+    theGeomPoint = NULL
+    shape_opt = NULL
+  }
+  
+  # Base ggplot
+  theplot = ggplot(subtable, theAes) + 
+    theGeomCol + pattern_opt +
+    theGeomPoint + shape_opt +
+    geom_point(aes(y = 0, size = triangle_size), shape = 17, color = rgb(0.2,0.2,0.2)) +  # Ajouter des triangles avec tailles différentes
+    geom_abline(slope = 0, intercept = 0, alpha = 0.25, size = 0.25) +
+    scale_size_continuous(range = c(2,6), breaks = c(1, 2, 3), 
+                          name = "Densité", labels = c("Faible", "Intermédiaire", "Forte")) +
+    scale_fill_manual(values = c('NBE_GPP' = 'grey', 'NBE_TR' = 'deepskyblue', 'NBE_ABS' = "orange")) +
+    alpha_opt +
+    labs(x = title,
+         y = "") +
+    theme_minimal() +
+    theme(legend.position = "top",
+          axis.text.x = element_blank(), 
+          # strip.text = element_blank() # retirer les noms de facettes
+    ) +
+    facet_grid(.~variable, labeller = labeller(variable = c("NBE_ABS" = "NBE(Absorbance)",  "NBE_GPP" = "NBE(GPP)", "NBE_TR" = "NBE(Transpiration)"))) +
+    guides( fill = guide_none(),
+            alpha = guide_legend(order = 1),
+            pattern_density = guide_legend(order = 1, override.aes = list(fill = "orange", color = "#414141", shape = NA)))
+  
+  # Add customized y-axis ticks
+  if(!is.null(y_ticks)){
+    theplot = theplot + scale_y_continuous(breaks = y_ticks, labels = y_ticks_labels) 
+  }
+
+  
+  # Add annotation to axes
+  if(!is.null(verticalVariable)){
+    
+    # Ajouter l'annotation uniquement pour le premier panneau 
+    theplot = theplot + 
+      geom_text(data = data.frame(
+        nTree= -Inf,  # Positionner à l'infini pour se situer au bord du graphique
+        value = Inf,  # Positionner à l'infini pour se situer au bord du graphique
+        variable = "NBE_ABS",  # Indiquer le panneau spécifique
+        alphaVariable = subtable$alphaVariable[1],
+        label = verticalVariableUpDownLabels[1]
+      ), aes(x = nTree, y = value, label = label), hjust = 0, vjust = 1.1, show.legend = F) + 
+      geom_text(data = data.frame(
+        nTree= -Inf,  # Positionner à l'infini pour se situer au bord du graphique
+        value = -Inf,  # Positionner à l'infini pour se situer au bord du graphique
+        variable = "NBE_ABS",  # Indiquer le panneau spécifique
+        alphaVariable = subtable$alphaVariable[1],
+        label = verticalVariableUpDownLabels[2]
+      ), aes(x = nTree, y = value, label = label), hjust = 0, vjust = -1.1, show.legend = F)
+  }
+  
+  if(addPoint){
+    theplot = theplot + guides( alpha = guide_legend(order = 1, override.aes = list(fill = "orange", shape = shapesPoint, color = colorPoint, linetype = 0)))
+  }else{
+    theplot = theplot + guides( alpha = guide_legend(order = 1, override.aes = list(fill = "orange", shape = NA)))
+  }
+  
+  return(theplot)
+}
+
+
+folderPlot = paste0("local_plots/", currentSimulation, "variables_effets_propres/NBE_barplot/")
+
+
+
+# All NBE on HETsap, SAPhet, per density
+barPlot("Effet du mélange net (%)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, RU == 100 & species == "all"), plot_variables, 
+        alphaVar = "composition", alphaVarName = "Mélange\ndominé par le", alphaVarLabels =c("hêtre","sapin"))
+
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_base", fileSuffix = ".pdf")
+
+# RU effect on NBE(GPP) 
+barPlot("Effet du mélange net (%)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, species == "all"), plot_variables, 
+        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
+        verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
+        hashInsteadOfAlpha = T, hashType = "circle", y_ticks = c(-15, -10, -5, 0, 5, 10, 15, 20), addOutline = T) 
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_RU_effect", fileSuffix = ".pdf")
+
+# RU effect on NBE(GPP) (HETsap)
+barPlot("Effet du mélange net (%)\n(hêtre majoritaire)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "HETsap"), plot_variables, 
+        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
+        #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
+        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_RU_effect_HETsap", fileSuffix = ".pdf")
+
+# RU effect on NBE(GPP) (SAPhet)
+barPlot("Effet du mélange net (%)\n(sapin majoritaire)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "SAPhet"), plot_variables, 
+        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
+        #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
+        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_RU_effect_SAPhet", fileSuffix = ".pdf")
+
+
+# NBE(GPP) per species
+barPlot("Effet du mélange net (%)\n(hêtre majoritaire)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, RU == 100 & composition == "HETsap" & species %in% c("beech", "fir")), plot_variables, 
+        alphaVar = "species", alphaVarName = "Espèce", alphaVarLabels =c("beech" = "Hêtre", "fir" = "Sapin"),
+        addPoint = F, hashInsteadOfAlpha = T, hashType = "stripe", inverseHashDensity = T)
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_bySpecies_HETsap", fileSuffix = ".pdf")
+
+
+barPlot("Effet du mélange net (%)\n(sapin majoritaire)",
+        subset(standYearTable_meanYear_mixed_bm_longer, RU == 100 & composition == "SAPhet" & species %in% c("beech", "fir")), plot_variables, 
+        alphaVar = "species", alphaVarName = "Espèce", alphaVarLabels =c("beech" = "Hêtre", "fir" = "Sapin"),
+        addPoint = F, hashInsteadOfAlpha = T, hashType = "stripe", inverseHashDensity = T)
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_bySpecies_SAPhet", fileSuffix = ".pdf")
+
+
+
+
+# old version
+# ggplot(subset(standYearTable_meanYear_mixed_bm_longer, variable %in% plot_variables & RU ==100), 
+#        aes(x = 100 * value * ifelse(composition == "HETsap", -1 ,1), y = as.factor(nTree), fill = variable, alpha = composition)) +
+#   geom_bar(stat = 'identity', position = 'identity', width = 0.7) +
+#   geom_point(aes(x = triangle_xpos, size = triangle_size), shape = 5, color = 'black') +  # Ajouter des triangles avec tailles différentes
+#   scale_size_continuous(range = c(2,5), breaks = c(1, 2, 3), 
+#                         name = "Densité", labels = c("Faible", "Intermédiaire", "Forte")) +
+#   scale_fill_manual(values = c('NBE_GPP' = 'grey', 'NBE_TR' = 'deepskyblue', 'NBE_ABS' = "orange"),
+#                     name = "NBE", labels = c("NBE_ABS" = "Absorbance",  "NBE_GPP" = "GPP", "NBE_TR" = "Transpiration")) +
+#   scale_alpha_manual(values = c('HETsap' = 0.5, 'SAPhet' = 1), 
+#                     name = "Espèce\ndominante", labels = c("Hêtre","Sapin")) +
+#   labs(x = "Effet du mélange net (%)",
+#        y = "") +
+#   theme_minimal() +
+#   theme(legend.position = "top",
+#         axis.text.y = element_blank(), 
+#         # strip.text = element_blank() # retirer les noms de facettes
+#         ) +
+#   facet_grid(variable ~ ., labeller = labeller(variable = c("NBE_ABS" = "NBE(Absorbance)",  "NBE_GPP" = "NBE(GPP)", "NBE_TR" = "NBE(Transpiration)"))) +
+#   guides( alpha = guide_legend(override.aes = list(fill = "orange", shape = NA)),  # Retirer les points de la légende
+#           fill = guide_none() ) +
+#   scale_x_continuous(breaks = c(-10, -5, 0, 5,10), labels = c(10, 5, 0, 5, 10))
+
+# Next : 
+#   Faire un graphe avec les NBE beech et les NBE sapin ? (utile pour montrer la répartition du NBE, mais compliqué en raison de la catégorie "espèce dominante hetre/sapin" qui va rendre confus) 
+#   Faire un graphe avec les NBE RU50  et les NBE RU 100 ? (pas besoin car la RU n'affecte que la NBE GPP)
+
+
