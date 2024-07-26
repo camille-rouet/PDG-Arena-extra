@@ -349,6 +349,7 @@ for(i in 1:dim(standYearTable_meanYear)[1]){
 
 # Filter final table
 standYearTable_meanYear_mixed = subset(standYearTable_meanYear, isMixed)
+standYearTable_meanYear_bm = subset(standYearTable_meanYear, classSize == "3BM")
 standYearTable_meanYear_mixed_bm = subset(standYearTable_meanYear_mixed, classSize == "3BM")
 
 
@@ -562,6 +563,42 @@ saveGgPlot(folder = folderPlot,
 
 
 
+
+
+# Physio vs Density
+variable_longer = c("ABS", "GPP", "TR", "REWmin")
+standYearTable_meanYear_longer = pivot_longer(data = standYearTable_meanYear, 
+                                              cols = variable_longer,
+                                              names_to = "variable", 
+                                              values_to = "value")
+
+# set the order
+standYearTable_meanYear_longer$variable = factor(standYearTable_meanYear_longer$variable, levels = variable_longer)
+standYearTable_meanYear_longer$composition = factor(standYearTable_meanYear_longer$composition, levels = c("HETpur", "SAPpur", "HETsap", "SAPhet"))
+ggplot(subset(standYearTable_meanYear_longer, RU == 100 & classSize == "3BM"), 
+       aes(x = nTree, y = value, linetype = composition, color = variable)) + 
+  expand_limits(y = 0) +
+  geom_point() + xlab("Densité (nombre d'arbre)") +
+  geom_line() + ylab("")+
+  scale_linetype_manual(values = c(1, 3, 2, 4), name = "Composition", 
+                        labels = c("HETpur" = "Hêtre pur", "HETsap"= "Mélange (hêtre majoritaire)", "SAPhet" = "Mélange (sapin majoritaire)", "SAPpur" = "Sapin pur")) +
+  scale_color_manual( values = c('GPP' = rgb(0.5,0.5,0.5), 'TR' = 'deepskyblue', 'ABS' = 'orange', "REWmin" = 'deepskyblue'), guide = "none" ) + 
+  facet_wrap(. ~ variable, scales = "free", 
+             labeller = labeller(variable = c(
+               "ABS" = "Absorbance\n(pour un)",
+               "GPP" = "GPP\n(gC/m2/yr)",
+               "TR" = "Transpiration\n(mm/yr)",
+               "REWmin" = "REW minimal dans l'année\n(pour un)")),
+             nrow = 1) +
+  theme(legend.position = "top") + 
+  guides(linetype = guide_legend(ncol = 2))
+
+
+folderPlot = paste0("local_plots/", currentSimulation, "physiology_basic/")
+saveGgPlot(folder = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 2.75,
+           scale = 1, fileName = "all_variables_perNtree", fileSuffix = ".pdf")
 
 
 
@@ -1075,7 +1112,8 @@ rbind(tab_RU100, tab_RU50)
 
 # Bar plot ----
 
-plot_variables = c("NBE_GPP", "NBE_TR", "NBE_ABS")
+plot_variables = c("NBE_ABS", "NBE_GPP", "NBE_TR")
+plot_variables = c("NBE_ABS", "NBE_GPP", "NBE_TR", "NBE_REWmin")
 pivot_variables = unique(c(plot_variables, 
                            "GPP", "TR", "ABS", "NBE_GPP", "NBE_TR", "NBE_ABS",
                           "GPP_beech", "TR_beech", "ABS_beech", "NBE_GPP_beech", "NBE_TR_beech", "NBE_ABS_beech", 
@@ -1097,7 +1135,9 @@ standYearTable_meanYear_mixed_bm_longer = mutate(.data = standYearTable_meanYear
 standYearTable_meanYear_mixed_bm_longer$triangle_size <- as.numeric(factor(standYearTable_meanYear_mixed_bm_longer$nTree, levels = c(30, 54, 75)))
 
 
-
+# Set the order of variables in plot
+standYearTable_meanYear_mixed_bm_longer$variable = factor(standYearTable_meanYear_mixed_bm_longer$variable, 
+                                                          levels = plot_variables)
 
 
 
@@ -1158,7 +1198,7 @@ barPlot = function(title, standYearTable_meanYear_mixed_bm_longer, plot_variable
     geom_abline(slope = 0, intercept = 0, alpha = 0.25, size = 0.25) +
     scale_size_continuous(range = c(2,6), breaks = c(1, 2, 3), 
                           name = "Densité", labels = c("Faible", "Intermédiaire", "Forte")) +
-    scale_fill_manual(values = c('NBE_GPP' = 'grey', 'NBE_TR' = 'deepskyblue', 'NBE_ABS' = "orange")) +
+    scale_fill_manual(values = c('NBE_GPP' = 'grey', 'NBE_TR' = 'deepskyblue', 'NBE_ABS' = 'orange', 'NBE_REWmin' = 'deepskyblue')) +
     alpha_opt +
     labs(x = title,
          y = "") +
@@ -1167,7 +1207,7 @@ barPlot = function(title, standYearTable_meanYear_mixed_bm_longer, plot_variable
           axis.text.x = element_blank(), 
           # strip.text = element_blank() # retirer les noms de facettes
     ) +
-    facet_grid(.~variable, labeller = labeller(variable = c("NBE_ABS" = "NBE(Absorbance)",  "NBE_GPP" = "NBE(GPP)", "NBE_TR" = "NBE(Transpiration)"))) +
+    facet_grid(.~variable, labeller = labeller(variable = c("NBE_ABS" = "NBE(Absorbance)",  "NBE_GPP" = "NBE(GPP)", "NBE_TR" = "NBE(Transpiration)", "NBE_REWmin" = "NBE(REWmin)"))) +
     guides( fill = guide_none(),
             alpha = guide_legend(order = 1),
             pattern_density = guide_legend(order = 1, override.aes = list(fill = "orange", color = "#414141", shape = NA)))
@@ -1223,38 +1263,11 @@ saveGgPlot(folderPlot = folderPlot,
            ratio = 3/2,
            scale = 1, fileName = "NBE_barplot_base", fileSuffix = ".pdf")
 
-# RU effect on NBE(GPP) 
-barPlot("Effet du mélange net (%)", 
-        subset(standYearTable_meanYear_mixed_bm_longer, species == "all"), plot_variables, 
-        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
-        verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
-        hashInsteadOfAlpha = T, hashType = "circle", y_ticks = c(-15, -10, -5, 0, 5, 10, 15, 20), addOutline = T) 
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
-           ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_RU_effect", fileSuffix = ".pdf")
+           ratio = 2.75,
+           scale = 1, fileName = "NBE_barplot_base2", fileSuffix = ".pdf")
 
-# RU effect on NBE(GPP) (HETsap)
-barPlot("Effet du mélange net (%)\n(hêtre majoritaire)", 
-        subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "HETsap"), plot_variables, 
-        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
-        #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
-        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
-saveGgPlot(folderPlot = folderPlot, 
-           plot_height = 480, plot_width = NULL,
-           ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_RU_effect_HETsap", fileSuffix = ".pdf")
-
-# RU effect on NBE(GPP) (SAPhet)
-barPlot("Effet du mélange net (%)\n(sapin majoritaire)", 
-        subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "SAPhet"), plot_variables, 
-        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
-        #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
-        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
-saveGgPlot(folderPlot = folderPlot, 
-           plot_height = 480, plot_width = NULL,
-           ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_RU_effect_SAPhet", fileSuffix = ".pdf")
 
 
 # NBE(GPP) per species
@@ -1276,6 +1289,46 @@ saveGgPlot(folderPlot = folderPlot,
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
            scale = 1, fileName = "NBE_barplot_bySpecies_SAPhet", fileSuffix = ".pdf")
+
+
+
+
+
+# RU effect 
+barPlot("Effet du mélange net (%)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, species == "all"), plot_variables, 
+        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
+        verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
+        hashInsteadOfAlpha = T, hashType = "circle", y_ticks = c(-15, -10, -5, 0, 5, 10, 15, 20), addOutline = T) 
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_RU_effect", fileSuffix = ".pdf")
+
+# RU effect (HETsap)
+barPlot("Effet du mélange net (%)\n(hêtre majoritaire)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "HETsap"), plot_variables, 
+        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
+        #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
+        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_RU_effect_HETsap", fileSuffix = ".pdf")
+
+# RU effect (SAPhet)
+barPlot("Effet du mélange net (%)\n(sapin majoritaire)", 
+        subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "SAPhet"), plot_variables, 
+        alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
+        #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
+        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
+saveGgPlot(folderPlot = folderPlot, 
+           plot_height = 480, plot_width = NULL,
+           ratio = 3/2,
+           scale = 1, fileName = "NBE_barplot_RU_effect_SAPhet", fileSuffix = ".pdf")
+
+
+
 
 
 
@@ -1307,4 +1360,208 @@ saveGgPlot(folderPlot = folderPlot,
 #   Faire un graphe avec les NBE beech et les NBE sapin ? (utile pour montrer la répartition du NBE, mais compliqué en raison de la catégorie "espèce dominante hetre/sapin" qui va rendre confus) 
 #   Faire un graphe avec les NBE RU50  et les NBE RU 100 ? (pas besoin car la RU n'affecte que la NBE GPP)
 
+
+
+
+
+
+
+summary(simuList$RU50_05_3BM__1HETpur__Narbres_75__Nha_469$yearlyResults$BBday)
+summary(simuList$RU50_05_3BM__1HETpur__Narbres_75__Nha_469$yearlyResults$endLeaf)
+summary(simuList$RU50_05_3BM__1HETpur__Narbres_75__Nha_469$yearlyResults$endLeaf - simuList$RU50_05_3BM__1HETpur__Narbres_75__Nha_469$yearlyResults$BBday)
+
+
+
+
+
+
+# Valeurs de résultats ----
+
+# 3.1 Observations préliminaires : effet densité et effet espèce
+variables = unique(c("LAI", "GPP", "TR", "ABS", "REWmin", "NBE_GPP", "NBE_TR", "NBE_ABS", "NBE_REWmin",
+                           "GPP_beech", "TR_beech", "ABS_beech", "NBE_GPP_beech", "NBE_TR_beech", "NBE_ABS_beech", 
+                           "GPP_fir", "TR_fir", "ABS_fir", "NBE_GPP_fir", "NBE_TR_fir", "NBE_ABS_fir"))
+
+
+
+# a. Variation relative de chaque variable par unité de LAI supplémentaire (moyenne sur les compositions)
+# seulement bois moyen et RU100
+standYearTable_meanYear_bm_RU100 = subset(standYearTable_meanYear_bm, RU == 100)
+# moyenner les compositions
+standYearTable_meanYear_bm_RU100_meanComposition = aggregate(standYearTable_meanYear_bm_RU100[, variables], 
+                                                             FUN = mean, 
+                                                             by = list(nTree = standYearTable_meanYear_bm_RU100$nTree))
+
+for(var in c("ABS", "GPP", "TR", "REWmin")){
+  lm_ntree = lm(data = standYearTable_meanYear_bm_RU100_meanComposition, as.formula(paste0(var, " ~ LAI")))
+  slope = lm_ntree$coefficients[2]
+  value_at_middle_density = standYearTable_meanYear_bm_RU100_meanComposition[standYearTable_meanYear_bm_RU100_meanComposition$nTree == 54, var]
+  mean_var_relative_increment_per_density_increment = slope / value_at_middle_density
+  cat("\n", var, " ", round(100*mean_var_relative_increment_per_density_increment, 1))
+}
+
+
+# b. Variation relative de chaque variable en fonction de l'espèce (moyenne sur les densité, en peuplement pur)
+# seulement bois moyen, pur, et RU100
+standYearTable_meanYear_bm_RU100_pur = subset(standYearTable_meanYear_bm, RU == 100 & composition %in% c("HETpur", "SAPpur"))
+# moyenner sur les densité
+standYearTable_meanYear_bm_RU100_pur_meanNTree = aggregate(standYearTable_meanYear_bm_RU100_pur[, variables], 
+                                                             FUN = mean, 
+                                                             by = list(composition = standYearTable_meanYear_bm_RU100_pur$composition))
+
+tab = tibble(var =  c("ABS", "GPP", "TR", "REWmin"), variation_HETpur_to_SAPpur = 0,  variation_SAPpur_to_HETpur = 0)
+for(var in tab$var){
+  valHETpur = standYearTable_meanYear_bm_RU100_pur_meanNTree[standYearTable_meanYear_bm_RU100_pur_meanNTree$composition == "HETpur", var]
+  valSAPpur = standYearTable_meanYear_bm_RU100_pur_meanNTree[standYearTable_meanYear_bm_RU100_pur_meanNTree$composition == "SAPpur", var]
+  variation_HETpur_to_SAPpur = (valSAPpur - valHETpur) / valHETpur
+  variation_SAPpur_to_HETpur = (valHETpur - valSAPpur) / valSAPpur
+  
+  tab[tab$var == var, ]$variation_HETpur_to_SAPpur = (valSAPpur - valHETpur) / valHETpur
+  tab[tab$var == var, ]$variation_SAPpur_to_HETpur = (valHETpur - valSAPpur) / valSAPpur
+}
+
+# conversion en pourcent
+tab$variation_HETpur_to_SAPpur = round(100 * tab$variation_HETpur_to_SAPpur, 1)
+tab$variation_SAPpur_to_HETpur = round(100 * tab$variation_SAPpur_to_HETpur, 1)
+
+# show
+tab
+
+
+
+# 3.2 Effet mélange
+
+# a. échelle peuplement, toutes compositions
+
+# seulement les bois moyens, mélanges et RU100
+standYearTable_meanYear_mixed_bm_RU100 = subset(standYearTable_meanYear_mixed_bm, RU == 100)
+standYearTable_meanYear_mixed_bm_RU100$all = ""
+# moyenner en global
+standYearTable_meanYear_mixed_bm_RU100_mean = aggregate(standYearTable_meanYear_mixed_bm_RU100[, variables], 
+                                                           FUN = mean, by = list(all = standYearTable_meanYear_mixed_bm_RU100$all))
+for(var in variables){
+  
+  cat("\n", var, ":\t\t", signif(standYearTable_meanYear_mixed_bm_RU100_mean[[var]], 4))
+}
+
+
+# b. échelle peuplement, par composition de mélange
+
+# seulement les bois moyens, mélanges et RU100
+standYearTable_meanYear_mixed_bm_RU100 = subset(standYearTable_meanYear_mixed_bm, RU == 100)
+# moyenner par composition
+standYearTable_meanYear_mixed_bm_RU100_meanComposition = aggregate(standYearTable_meanYear_mixed_bm_RU100[, variables], 
+                                                        FUN = mean, by = list(composition = standYearTable_meanYear_mixed_bm_RU100$composition))
+tab = tibble(var =  c("NBE_ABS", "NBE_GPP", "NBE_TR", "NBE_REWmin"), val_HETsap = 0,  val_SAPhet = 0)
+
+for(var in tab$var){
+  tab[tab$var == var, ]$val_HETsap = subset(standYearTable_meanYear_mixed_bm_RU100_meanComposition, composition == "HETsap")[[var]]
+  tab[tab$var == var, ]$val_SAPhet = subset(standYearTable_meanYear_mixed_bm_RU100_meanComposition, composition == "SAPhet")[[var]]
+}
+
+# conversion en pourcent
+tab$val_HETsap = round(100 * tab$val_HETsap, 1)
+tab$val_SAPhet = round(100 * tab$val_SAPhet, 1)
+
+# show
+tab
+
+
+
+# c. échelle espèce, toutes composition
+
+# seulement les bois moyens, mélanges et RU100
+standYearTable_meanYear_mixed_bm_RU100 = subset(standYearTable_meanYear_mixed_bm, RU == 100)
+standYearTable_meanYear_mixed_bm_RU100$all = ""
+# moyenner en global
+standYearTable_meanYear_mixed_bm_RU100_mean = aggregate(standYearTable_meanYear_mixed_bm_RU100[, variables], 
+                                                        FUN = mean, by = list(all = standYearTable_meanYear_mixed_bm_RU100$all))
+for(var in variables){
+  cat("\n", var, ":\t\t", signif(standYearTable_meanYear_mixed_bm_RU100_mean[[var]], 4))
+}
+
+
+# d. échelle espèce, par composition de mélange
+
+# seulement les bois moyens, mélanges et RU100
+standYearTable_meanYear_mixed_bm_RU100 = subset(standYearTable_meanYear_mixed_bm, RU == 100)
+# moyenner par composition
+standYearTable_meanYear_mixed_bm_RU100_meanComposition = aggregate(standYearTable_meanYear_mixed_bm_RU100[, variables], 
+                                                                   FUN = mean, by = list(composition = standYearTable_meanYear_mixed_bm_RU100$composition))
+tab = tibble(var =  paste0(rep(c("NBE_ABS", "NBE_GPP", "NBE_TR"), each = 2), c("_beech", "_fir")), val_HETsap = 0,  val_SAPhet = 0)
+
+for(var in tab$var){
+  tab[tab$var == var, ]$val_HETsap = subset(standYearTable_meanYear_mixed_bm_RU100_meanComposition, composition == "HETsap")[[var]]
+  tab[tab$var == var, ]$val_SAPhet = subset(standYearTable_meanYear_mixed_bm_RU100_meanComposition, composition == "SAPhet")[[var]]
+}
+
+# conversion en pourcent
+tab$val_HETsap = round(100 * tab$val_HETsap, 1)
+tab$val_SAPhet = round(100 * tab$val_SAPhet, 1)
+
+# show
+tab
+
+
+
+# 3.3 Effet de la densité sur l'effet du mélange
+
+# a. Echelle peuplement, toute composition
+
+# seulement les bois moyens, mélanges et RU100
+standYearTable_meanYear_mixed_bm_RU100 = subset(standYearTable_meanYear_mixed_bm, RU == 100)
+# moyenne par densité
+standYearTable_meanYear_mixed_bm_RU100_meanNTree = aggregate(standYearTable_meanYear_mixed_bm_RU100[, variables], 
+                                                           FUN = mean, 
+                                                           by = list(nTree = standYearTable_meanYear_mixed_bm_RU100$nTree))
+standYearTable_meanYear_mixed_bm_RU100_meanNTree[, c("nTree", "NBE_GPP")]
+
+
+# b. Echelle peuplement, par composition
+
+# seulement les bois moyens, mélanges et RU100
+standYearTable_meanYear_mixed_bm_RU100 = subset(standYearTable_meanYear_mixed_bm, RU == 100)
+
+variables = c("NBE_ABS", "NBE_GPP", "NBE_TR", "NBE_REWmin")
+standYearTable_meanYear_mixed_bm_RU100[, variables] = round(100* standYearTable_meanYear_mixed_bm_RU100[, variables], 1)
+standYearTable_meanYear_mixed_bm_RU100$nTree = factor(standYearTable_meanYear_mixed_bm_RU100$nTree, levels = c(30, 54 ,75))
+
+arrange(standYearTable_meanYear_mixed_bm_RU100[ , c("composition", "nTree", variables)], factor(composition), factor(nTree))
+
+
+
+# c. Echelle espèce, par composition
+# seulement les bois moyens, mélanges et RU100
+standYearTable_meanYear_mixed_bm_RU100 = subset(standYearTable_meanYear_mixed_bm, RU == 100)
+
+variables = paste0(rep(c("NBE_ABS", "NBE_GPP", "NBE_TR"), each = 2), c("_beech", "_fir"))
+standYearTable_meanYear_mixed_bm_RU100[, variables] = round(100* standYearTable_meanYear_mixed_bm_RU100[, variables], 1)
+standYearTable_meanYear_mixed_bm_RU100$nTree = factor(standYearTable_meanYear_mixed_bm_RU100$nTree, levels = c(30, 54 ,75))
+
+arrange(standYearTable_meanYear_mixed_bm_RU100[ , c("composition", "nTree", variables)], factor(composition), factor(nTree))
+
+
+
+# 3.4 Effet du stress hydrique sur l'effet du mélange
+variables = c("NBE_ABS", "NBE_GPP", "NBE_TR", "NBE_REWmin")
+
+# a. toute composition
+# seulement les bois moyens, mélanges
+# moyenne par densité et composition
+standYearTable_meanYear_mixed_bm_meanNTree_meanComposition = aggregate(standYearTable_meanYear_mixed_bm[, variables], 
+                                                             FUN = mean, 
+                                                             by = list(RU = standYearTable_meanYear_mixed_bm$RU))
+round(100 * standYearTable_meanYear_mixed_bm_meanNTree_meanComposition, 1)
+
+
+
+# b. Par composition
+# seulement les bois moyens, mélanges
+# moyenne par densité et composition
+standYearTable_meanYear_mixed_bm_meanNTree = aggregate(standYearTable_meanYear_mixed_bm[, variables], 
+                                                       FUN = mean, 
+                                                       by = list(RU = standYearTable_meanYear_mixed_bm$RU, composition = standYearTable_meanYear_mixed_bm$composition))
+# rounding
+standYearTable_meanYear_mixed_bm_meanNTree[, variables] = round( standYearTable_meanYear_mixed_bm_meanNTree[, variables] * 100, 1)
+standYearTable_meanYear_mixed_bm_meanNTree
 
