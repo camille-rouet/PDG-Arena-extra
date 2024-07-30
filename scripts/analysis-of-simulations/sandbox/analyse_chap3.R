@@ -581,24 +581,25 @@ ggplot(subset(standYearTable_meanYear_longer, RU == 100 & classSize == "3BM"),
   geom_point() + xlab("Densité (nombre d'arbre)") +
   geom_line() + ylab("")+
   scale_linetype_manual(values = c(1, 3, 2, 4), name = "Composition", 
-                        labels = c("HETpur" = "Hêtre pur", "HETsap"= "Mélange (hêtre majoritaire)", "SAPhet" = "Mélange (sapin majoritaire)", "SAPpur" = "Sapin pur")) +
-  scale_color_manual( values = c('GPP' = rgb(0.5,0.5,0.5), 'TR' = 'deepskyblue', 'ABS' = 'orange', "REWmin" = 'deepskyblue'), guide = "none" ) + 
+                        labels = c("HETpur" = "Hêtre pur", "HETsap"= "Mélange à majorité\nde hêtres", "SAPhet" = "Mélange à majorité\nde sapins", "SAPpur" = "Sapin pur")) +
+  scale_color_manual( values = c('GPP' = rgb(0.5,0.5,0.5), 'TR' = 'deepskyblue', 'ABS' = 'orange', "REWmin" = 'slateblue2'), guide = "none" ) + 
   facet_wrap(. ~ variable, scales = "free", 
              labeller = labeller(variable = c(
                "ABS" = "Absorbance\n(pour un)",
                "GPP" = "GPP\n(gC/m2/yr)",
                "TR" = "Transpiration\n(mm/yr)",
                "REWmin" = "REW minimal dans l'année\n(pour un)")),
-             nrow = 1) +
+             nrow = 2) +
   theme(legend.position = "top") + 
   guides(linetype = guide_legend(ncol = 2))
 
 
 folderPlot = paste0("local_plots/", currentSimulation, "physiology_basic/")
+plot_scale = 0.85
 saveGgPlot(folder = folderPlot, 
            plot_height = 480, plot_width = NULL,
-           ratio = 2.75,
-           scale = 1, fileName = "all_variables_perNtree", fileSuffix = ".pdf")
+           ratio = 0.85,
+           scale = 1.1, fileName = "all_variables_perNtree", fileSuffix = ".pdf")
 
 
 
@@ -1145,7 +1146,7 @@ standYearTable_meanYear_mixed_bm_longer$variable = factor(standYearTable_meanYea
 # Create a beautiful barplot
 # VerticalXX input should be use only if plot_variables are POSITIVES
 barPlot = function(title, standYearTable_meanYear_mixed_bm_longer, plot_variables, alphaVar, alphaVarName, alphaVarLabels, 
-                   verticalVariable = NULL, verticalVariableUpDownLabels = NULL, y_ticks = NULL, 
+                   verticalVariable = NULL, verticalVariableUpDownLabels = NULL, ylims = NULL, y_ticks = NULL, 
                    hashInsteadOfAlpha = F, addPoint = F, hashType = "circle", inverseHashDensity = F,
                    addOutline = F){
   
@@ -1198,16 +1199,16 @@ barPlot = function(title, standYearTable_meanYear_mixed_bm_longer, plot_variable
     geom_abline(slope = 0, intercept = 0, alpha = 0.25, size = 0.25) +
     scale_size_continuous(range = c(2,6), breaks = c(1, 2, 3), 
                           name = "Densité", labels = c("Faible", "Intermédiaire", "Forte")) +
-    scale_fill_manual(values = c('NBE_GPP' = 'grey', 'NBE_TR' = 'deepskyblue', 'NBE_ABS' = 'orange', 'NBE_REWmin' = 'deepskyblue')) +
+    scale_fill_manual(values = c('NBE_ABS' = 'orange', 'NBE_GPP' = 'grey', 'NBE_TR' = 'deepskyblue', 'NBE_REWmin' = 'slateblue2')) +
     alpha_opt +
-    labs(x = title,
-         y = "") +
+    labs(x = "",
+         y = title) +
     theme_minimal() +
     theme(legend.position = "top",
           axis.text.x = element_blank(), 
           # strip.text = element_blank() # retirer les noms de facettes
     ) +
-    facet_grid(.~variable, labeller = labeller(variable = c("NBE_ABS" = "NBE(Absorbance)",  "NBE_GPP" = "NBE(GPP)", "NBE_TR" = "NBE(Transpiration)", "NBE_REWmin" = "NBE(REWmin)"))) +
+    facet_grid(.~variable, labeller = labeller(variable = c("NBE_ABS" = "EMN(Absorbance)",  "NBE_GPP" = "EMN(GPP)", "NBE_TR" = "EMN(Transpiration)", "NBE_REWmin" = "EMN(REWmin)"))) +
     guides( fill = guide_none(),
             alpha = guide_legend(order = 1),
             pattern_density = guide_legend(order = 1, override.aes = list(fill = "orange", color = "#414141", shape = NA)))
@@ -1215,6 +1216,12 @@ barPlot = function(title, standYearTable_meanYear_mixed_bm_longer, plot_variable
   # Add customized y-axis ticks
   if(!is.null(y_ticks)){
     theplot = theplot + scale_y_continuous(breaks = y_ticks, labels = y_ticks_labels) 
+  }
+  
+  
+  # Add customized y-limits
+  if(!is.null(ylims)){
+    theplot = theplot + expand_limits(y = ylims)
   }
 
   
@@ -1250,52 +1257,55 @@ barPlot = function(title, standYearTable_meanYear_mixed_bm_longer, plot_variable
 
 
 folderPlot = paste0("local_plots/", currentSimulation, "variables_effets_propres/NBE_barplot/")
-
+plot_scale = 0.85
 
 
 # All NBE on HETsap, SAPhet, per density
-barPlot("Effet du mélange net (%)", 
+barPlot("Effet net du mélange, en %", 
         subset(standYearTable_meanYear_mixed_bm_longer, RU == 100 & species == "all"), plot_variables, 
-        alphaVar = "composition", alphaVarName = "Mélange\ndominé par le", alphaVarLabels =c("hêtre","sapin"))
+        alphaVar = "composition", alphaVarName = "Mélange\nà majorité de", alphaVarLabels =c("hêtre","sapin"))
 
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_base", fileSuffix = ".pdf")
+           scale = plot_scale, fileName = "NBE_barplot_base", fileSuffix = ".pdf")
 
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 2.75,
-           scale = 1, fileName = "NBE_barplot_base2", fileSuffix = ".pdf")
+           scale = plot_scale, fileName = "NBE_barplot_base2", fileSuffix = ".pdf")
 
 
 
 # NBE(GPP) per species
-barPlot("Effet du mélange net (%)\n(hêtre majoritaire)", 
+ylim_plot_species = c(-30, 60)
+
+# HETsap
+barPlot("Effet net du mélange, en %", 
         subset(standYearTable_meanYear_mixed_bm_longer, RU == 100 & composition == "HETsap" & species %in% c("beech", "fir")), plot_variables, 
         alphaVar = "species", alphaVarName = "Espèce", alphaVarLabels =c("beech" = "Hêtre", "fir" = "Sapin"),
-        addPoint = F, hashInsteadOfAlpha = T, hashType = "stripe", inverseHashDensity = T)
+        addPoint = F, hashInsteadOfAlpha = T, hashType = "stripe", inverseHashDensity = T, ylims = ylim_plot_species)
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_bySpecies_HETsap", fileSuffix = ".pdf")
+           scale = plot_scale, fileName = "NBE_barplot_bySpecies_HETsap", fileSuffix = ".pdf")
 
-
-barPlot("Effet du mélange net (%)\n(sapin majoritaire)",
+# SAPhet
+barPlot("Effet net du mélange, en %",
         subset(standYearTable_meanYear_mixed_bm_longer, RU == 100 & composition == "SAPhet" & species %in% c("beech", "fir")), plot_variables, 
         alphaVar = "species", alphaVarName = "Espèce", alphaVarLabels =c("beech" = "Hêtre", "fir" = "Sapin"),
-        addPoint = F, hashInsteadOfAlpha = T, hashType = "stripe", inverseHashDensity = T)
+        addPoint = F, hashInsteadOfAlpha = T, hashType = "stripe", inverseHashDensity = T,  ylims = ylim_plot_species)
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_bySpecies_SAPhet", fileSuffix = ".pdf")
+           scale = plot_scale, fileName = "NBE_barplot_bySpecies_SAPhet", fileSuffix = ".pdf")
 
 
 
 
 
 # RU effect 
-barPlot("Effet du mélange net (%)", 
+barPlot("Effet net du mélange, en %", 
         subset(standYearTable_meanYear_mixed_bm_longer, species == "all"), plot_variables, 
         alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
         verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
@@ -1303,29 +1313,32 @@ barPlot("Effet du mélange net (%)",
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_RU_effect", fileSuffix = ".pdf")
+           scale = plot_scale, fileName = "NBE_barplot_RU_effect", fileSuffix = ".pdf")
 
 # RU effect (HETsap)
-barPlot("Effet du mélange net (%)\n(hêtre majoritaire)", 
+ylims_plot_RU = c(0, 15)
+# HETsap
+barPlot("Effet net du mélange, en %", 
         subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "HETsap"), plot_variables, 
         alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
         #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
-        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
+        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T, ylims = ylims_plot_RU) 
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_RU_effect_HETsap", fileSuffix = ".pdf")
+           scale = plot_scale, fileName = "NBE_barplot_RU_effect_HETsap", fileSuffix = ".pdf")
 
 # RU effect (SAPhet)
-barPlot("Effet du mélange net (%)\n(sapin majoritaire)", 
+# SAPhet
+barPlot("Effet net du mélange, en %", 
         subset(standYearTable_meanYear_mixed_bm_longer, species == "all" & composition == "SAPhet"), plot_variables, 
         alphaVar = "RU", alphaVarName = "RU", alphaVarLabels = c("50" = "50", "100" = "100"),
         #verticalVariable = "composition", verticalVariableUpDownLabels = c("HETsap" = "Hêtre dom", "SAPhet" = "Sapin dom"),
-        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T) 
+        hashInsteadOfAlpha = T, hashType = "circle", addOutline = T, ylims = ylims_plot_RU) 
 saveGgPlot(folderPlot = folderPlot, 
            plot_height = 480, plot_width = NULL,
            ratio = 3/2,
-           scale = 1, fileName = "NBE_barplot_RU_effect_SAPhet", fileSuffix = ".pdf")
+           scale = plot_scale, fileName = "NBE_barplot_RU_effect_SAPhet", fileSuffix = ".pdf")
 
 
 
@@ -1344,7 +1357,7 @@ saveGgPlot(folderPlot = folderPlot,
 #                     name = "NBE", labels = c("NBE_ABS" = "Absorbance",  "NBE_GPP" = "GPP", "NBE_TR" = "Transpiration")) +
 #   scale_alpha_manual(values = c('HETsap' = 0.5, 'SAPhet' = 1), 
 #                     name = "Espèce\ndominante", labels = c("Hêtre","Sapin")) +
-#   labs(x = "Effet du mélange net (%)",
+#   labs(x = "Effet net du mélange (%)",
 #        y = "") +
 #   theme_minimal() +
 #   theme(legend.position = "top",
