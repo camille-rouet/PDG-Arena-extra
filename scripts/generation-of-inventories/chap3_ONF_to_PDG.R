@@ -16,7 +16,7 @@ source("scripts/generation-of-inventories/CR_methods_for_inventory_generation.R"
 
 # PARAMETERS ----
 
-outputInventoryFolder = "inventories/2024-04-25_ONF-test/"
+outputInventoryFolder = "simulation-data/chap-onf/2024-07-12_ONF/"
 
 outputInConsole = FALSE
 # outputInConsole = TRUE # to comment
@@ -173,8 +173,15 @@ rm(soil_vl_inter_tmp)
 # mean ratio hcb/height (vl inter only)
 dGMAP_horsprod_vl_inter = subset(dGMAP_horsprod_all, site == "vl" & sous_site == "inter")
 dGMAP_horsprod_vl_inter_noNA = dGMAP_horsprod_vl_inter[ !is.na(dGMAP_horsprod_vl_inter$htot) &!is.na(dGMAP_horsprod_vl_inter$h_base_houppier) ,]
+dGMAP_horsprod_vl_inter_noNA_beech = subset(dGMAP_horsprod_vl_inter_noNA, essence == "hetre")
+dGMAP_horsprod_vl_inter_noNA_fir = subset(dGMAP_horsprod_vl_inter_noNA, essence == "sapin")
 summary(dGMAP_horsprod_vl_inter_noNA$h_base_houppier / dGMAP_horsprod_vl_inter_noNA$htot)
+summary(dGMAP_horsprod_vl_inter_noNA_beech$h_base_houppier / dGMAP_horsprod_vl_inter_noNA_beech$htot)
+summary(dGMAP_horsprod_vl_inter_noNA_fir$h_base_houppier / dGMAP_horsprod_vl_inter_noNA_fir$htot)
+
 ratio_height_hcb = mean(dGMAP_horsprod_vl_inter_noNA$h_base_houppier / dGMAP_horsprod_vl_inter_noNA$htot)
+ratio_height_hcb_beech = mean(dGMAP_horsprod_vl_inter_noNA_beech$h_base_houppier / dGMAP_horsprod_vl_inter_noNA_beech$htot)
+ratio_height_hcb_fir = mean(dGMAP_horsprod_vl_inter_noNA_fir$h_base_houppier / dGMAP_horsprod_vl_inter_noNA_fir$htot)
 
 # mean ratio hcb/height (all trees)
 dGMAP_horsprod_noNA = dGMAP_horsprod_all[ !is.na(dGMAP_horsprod_all$htot) &!is.na(dGMAP_horsprod_all$h_base_houppier) ,]
@@ -235,8 +242,8 @@ for(i_RU in 1:length(targetRUvec)){
     
     # Generate height of crown base
     
-    treeTableONF_code_site$hcb_computed = treeTableONF_code_site$htot * ratio_height_hcb
-    
+    # treeTableONF_code_site$hcb_computed = treeTableONF_code_site$htot * ratio_height_hcb
+    treeTableONF_code_site$hcb_computed = treeTableONF_code_site$htot * ifelse(treeTableONF_code_site$esp == "Fagus sylvatica", ratio_height_hcb_beech, ratio_height_hcb_fir)
     
     # Generate tree table ----
     treeTable = tibble(idTree = treeTableONF_code_site$id,
@@ -350,4 +357,4 @@ for(i_RU in 1:length(targetRUvec)){
 } # end loop on target RU
 
 # Execute to put output back to console
-# while(sink.number() > 0){sink()}
+while(sink.number() > 0){sink()}
