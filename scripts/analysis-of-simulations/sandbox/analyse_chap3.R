@@ -575,11 +575,20 @@ standYearTable_meanYear_longer = pivot_longer(data = standYearTable_meanYear,
 # set the order
 standYearTable_meanYear_longer$variable = factor(standYearTable_meanYear_longer$variable, levels = variable_longer)
 standYearTable_meanYear_longer$composition = factor(standYearTable_meanYear_longer$composition, levels = c("HETpur", "SAPpur", "HETsap", "SAPhet"))
+
+standYearTable_meanYear_longer$densite = ifelse(standYearTable_meanYear_longer$nTree == 75, "Forte", 
+                                                ifelse(standYearTable_meanYear_longer$nTree == 54, "Inter", 
+                                                       ifelse(standYearTable_meanYear_longer$nTree == 30, "Faible", "NA")))
+
+standYearTable_meanYear_longer$densite = factor(standYearTable_meanYear_longer$densite, 
+                                                          levels = c("Faible", "Inter", "Forte"))
+
+
 ggplot(subset(standYearTable_meanYear_longer, RU == 100 & classSize == "3BM"), 
-       aes(x = nTree, y = value, linetype = composition, color = variable)) + 
+       aes(x = densite, y = value, linetype = composition, color = variable)) + 
   expand_limits(y = 0) +
-  geom_point() + xlab("Densité (nombre d'arbre)") +
-  geom_line() + ylab("")+
+  geom_point() + xlab("Densité") +
+  geom_line(aes(x=as.numeric(densite))) + ylab("")+ 
   scale_linetype_manual(values = c(1, 3, 2, 4), name = "Composition", 
                         labels = c("HETpur" = "Hêtre pur", "HETsap"= "Mélange à majorité\nde hêtres", "SAPhet" = "Mélange à majorité\nde sapins", "SAPpur" = "Sapin pur")) +
   scale_color_manual( values = c('GPP' = rgb(0.5,0.5,0.5), 'TR' = 'deepskyblue', 'ABS' = 'orange', "REWmin" = 'slateblue2'), guide = "none" ) + 
