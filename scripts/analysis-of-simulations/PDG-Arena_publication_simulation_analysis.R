@@ -22,7 +22,7 @@ rm(list = ls()) ; gc() # clear
 capsisPath = ""
 varPath = paste0(capsisPath, "var/") 
 workfilesPath = ""
-PROGRAM_ON_SERVER = FALSE
+PROGRAM_ON_SERVER = TRUE
 
 source("scripts/define_folders.R")
 source("scripts/analysis-of-simulations/CRMethodsForSimulations.R")
@@ -73,7 +73,7 @@ import_irreg_demo_monosp = FALSE # import E1B mode ?
 import_CAST = TRUE
 keepFilter = ""
 
-currentSimulation = "2024-05-07_GMAP_publication_noslope/"
+currentSimulation = "2024-05-07_GMAP_publication/"
 # currentSimulation = "2023-12-15_goodHeightGoodAlignment/"
 simulationFolderGlobal = paste0(ifelse(grepl(currentSimulation, pattern = "2023"), "2023", "2024"), 
                                 "_simu_article/", currentSimulation)
