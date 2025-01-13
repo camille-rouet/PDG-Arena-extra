@@ -638,7 +638,9 @@ standPeriodTable_GMAP = addNewColumnsAndUnits(standPeriodTable_GMAP, simuListIrr
 outlierList = c("bg_haut_sp_2", "bg_bas_sp_4")
 # outlierList = c("bg_haut_sp_2", "bg_bas_sp_4", "bg_bas_sp_5")
 
-if(length(outlierList)>0){
+removeOutliers = F
+
+if(length(outlierList)>0 & removeOutliers){
   
   treeYearTable_E2 = subset(treeYearTable_E2, !code_site %in% outlierList)
   treeYearTable_GMAP = subset(treeYearTable_GMAP, !code_site %in% outlierList)
@@ -848,21 +850,24 @@ ggplot(simulationComparaisonTable_sub,
   # ggtitle("PDG-Arena (R+N) vs CASTANEA (R+N) ") + 
   scale_color_discrete(name = "Composition",
                        labels = c("Mixed", "Beech", "Fir"))+ 
-  xlab("GPP simulated with CASTANEA [g/m2/yr]")+
-  ylab("GPP simulated with PDG-Arena [g/m2/yr]")+
+  xlab(expression(paste("GPP simulated with CASTANEA (", g%.%m^-2%.%year^-1,")")))+
+  ylab(expression(paste("GPP simulated with PDG-Arena (", g%.%m^-2%.%year^-1,")")))+
+  annotate("text", x=2000, y= 1800, label= "1:1", size = textSize*0.35) +
+  annotate("text", x=920, y= 1500, label= paste0("r = ", round(cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]]), 3)
+  ) , size = textSize*0.35) + 
+  theme_classic() + 
   theme(
     # text=element_text(size=textSize), #change font size of all text
     # axis.text=element_text(size=textSize), #change font size of axis text
     axis.title=element_text(size=textSize), #change font size of axis titles
     # plot.title=element_text(size=textSize), #change font size of plot title
     legend.text=element_text(size=textSize), #change font size of legend text
-    legend.title=element_text(size=textSize) #change font size of legend title
-  )+
-  annotate("text", x=2000, y= 1800, label= "1:1", size = 4.5) +
-  annotate("text", x=920, y= 1500, label= paste0("r = ", round(cor(simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix2)]], simulationComparaisonTable_sub[[paste0(variableOfInterest, suffix1)]]), 3)
-  ) , size = 4.5) 
+    legend.title=element_text(size=textSize), #change font size of legend title
+    panel.border = element_rect(color = "black", fill = NA, size = 1),  # Inner panel border
+    axis.line = element_blank()
+  )
 folderPlot = paste0("local_plots/", currentSimulation, "divers/")
-saveLastGgPlot(fileName = "E0_CAST", folderPlot, plot_width = 720, ratio = 1.20, fileSuffix = ".pdf")
+saveLastGgPlot(fileName = "E0_CAST", folderPlot, plot_width = 720, ratio = 1.20, scale = 0.95, fileSuffix = ".pdf")
 
 
 
@@ -1078,42 +1083,56 @@ stat_comparison_pairs = list( c("RM", "R"), c("RM", "O"), c("R", "O") )
 
 # Choice of variables to plot:
 variablesPlot = c(
-  # "transpiration",
   # "REWmin", 
   # "RU_level_min",
-  "GPPy_m2_sim",
-  "vegAbsorbance"
-  # "RU_shortage_max"
+  # "GPPy_m2_sim",
+  # "vegAbsorbance"
+  "RU_shortage_max",
+  "transpiration"
   )
 
 # Plot boxplot
+
+
+textSize = 14
+
+mylabels = c(
+  "transpiration" = "Transpiration~(mm)",
+  "GPPy_m2_sim" = "GPP~(g%.%m^-2%.%year^-1)",
+  "vegAbsorbance" = "Absorbance~(no~unit)",
+  "REWmin" = "Min~yearly~water~level~(%)",
+  "RU_level_min" = "Min~yearly~water~level~(mm)",
+  "RU_shortage_max" = "Max.~water~shortage~(mm)")
+
 ggplot(subset(lollypopTable_long, variable_short %in% variablesPlot &
                 grepl(simu, pattern = "RM|R|O")), 
        aes(x = simu, y = value, fill = simu)) + 
   geom_boxplot() + 
   facet_wrap(. ~ variable_short, scales="free", 
-             labeller = labeller(variable_short = c(
-               "transpiration" = "Transpiration (mm)",
-               "GPPy_m2_sim" = "GPP (gC/m2/yr)",
-               "vegAbsorbance" = "Absorbance (no unit)",
-               "REWmin" = "Min yearly water level (%)",
-               "RU_level_min" = "Min yearly water level (mm)",
-               "RU_shortage_max" = "Maximum water shortage (mm)"))) +
+             labeller = as_labeller(mylabels, label_parsed)) +
   ylab("")+
   # coord_cartesian(ylim = c(0,NA))+
   scale_fill_manual(name = "Inventories", values=c("#ddeeff", "#a2cffd", "#1a74d2"))+
+  theme_classic() + 
   theme(axis.title.x = element_blank(),
         # axis.text.x=element_blank(), axis.ticks.x=element_blank()
+        strip.text.x = element_text(size = textSize), 
+        axis.text.x=element_text(size=textSize), #change font size of axis text
+        axis.text.y=element_text(size=textSize), #change font size of axis text
+    legend.text=element_text(size=textSize), #change font size of legend text
+    legend.title=element_text(size=textSize), #change font size of legend title
+    panel.border = element_rect(fill = NA, size = 1),  # Inner panel border
+    strip.background = element_rect(fill = NA, size = 1),
+    strip.text = element_text(face = "bold"),
+    axis.line = element_blank()
   )+
-  theme(strip.text.x = element_text(size = 10))+
-  # theme(legend.position="none")+
   stat_compare_means(comparisons =  stat_comparison_pairs, 
                      method = "wilcox.test", paired = T, 
                      label = "p.signif")
 
 
 
-folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")
+folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/new/")
 saveLastGgPlot(fileName = "VARIABLES_per_mode_water", folderPlot, plot_height = 720, ratio = 3/2, scale = 0.7, fileSuffix = ".pdf")
 
 
@@ -1210,11 +1229,16 @@ yValMax = max(xValMax, yValMax)
 coord_limits = coord_cartesian(xlim = c(xValMin,xValMax), ylim = c(yValMin,yValMax))
 
 size = 3
-folderPlot = paste0("local_plots/", currentSimulation, "test/")
+textSize = 14
+folderPlot = paste0("local_plots/", currentSimulation, "comparison_measurement/")
 for(i in 1:length(standPeriodTable_list)){
   a_standPeriodTable = standPeriodTable_list[[i]]
   
-  a_title = title_list[[i]]
+  for(icol in 1:dim(a_standPeriodTable)[2]){
+    a_standPeriodTable[, icol] = drop_units(a_standPeriodTable[, icol])
+  }
+  
+  a_title = names(standPeriodTable_list)[i]
   ggplot(subset(a_standPeriodTable, period == "1996_2013"), 
          aes_string(x = variableX, y = variableY, color = "composition", label = "code_site_cut", shape = "factor(site)")
   ) + 
@@ -1224,16 +1248,27 @@ for(i in 1:length(standPeriodTable_list)){
     geom_text_repel(size = 3.5, alpha = 0.7, data =  subset(a_standPeriodTable,period == "1996_2013" & code_site %in% outlierList)) +
     geom_point(size = size) + geom_abline(slope = 1, alpha = 0.25) + 
     coord_limits+
-    ylab("WVI simulated")+
-    xlab("WVI measured")+
+    ylab(expression(paste("Simulated WVI (", cm^3%.%m^-2%.%year^-1, ")")))+
+    xlab(expression(paste("Measured WVI (", cm^3%.%m^-2%.%year^-1, ")")))+
     scale_color_discrete(name = "Composition",
                          labels = c("Mixed", "Beech", "Fir"))+
     scale_shape_manual(name = "Site",
                        labels = c("Bauges", "Vercors", "Ventoux"),
                        values = c(15,19,17)) +
-    annotate("text", x= yValMax *0.85, y=yValMax*0.9, label= "1:1", size = 6)
+    annotate("text", x= yValMax *0.85, y=yValMax*0.9, label= "1:1", size = textSize*0.35)+
+    theme_classic() + 
+    theme(
+      # text=element_text(size=textSize), #change font size of all text
+      # axis.text=element_text(size=textSize), #change font size of axis text
+      axis.title=element_text(size=textSize), #change font size of axis titles
+      # plot.title=element_text(size=textSize), #change font size of plot title
+      legend.text=element_text(size=textSize), #change font size of legend text
+      legend.title=element_text(size=textSize), #change font size of legend title
+      panel.border = element_rect(color = "black", fill = NA, size = 1),  # Inner panel border
+      axis.line = element_blank()
+    )
   
-  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale= 0.6, fileName = paste0("WVI2_nolabel", "_", a_title$title))
+  saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, scale= 0.6, fileName = paste0("WVI2_nolabel", "_", a_title))
 }
 
 
@@ -1246,7 +1281,6 @@ for(i in 1:length(standPeriodTable_list)){
 
 # APPENDIX Height-DBH relationship ----
 
-folderPlot = paste0("local_plots/", currentSimulation, "height_dbh/")
 dGMAP_horsprod_simulatedTrees$dbh = dGMAP_horsprod_simulatedTrees$circonference / pi
 
 
@@ -1295,14 +1329,26 @@ ggplot(dGMAP_horsprod_simulatedTrees, aes(x = (dbh), y = (htot))) +
   facet_wrap( essence ~ site, labeller = as_labeller(facet_names)) +
   xlab("DBH (cm)") + ylab("Height (m)")+
   geom_text(data = stat_table, 
-            aes(x = 15, y = 38, 
-                label = paste0("r2 = ", round(r2, 2))),
+            aes(x = 10, y = 38, 
+                label = paste0("r^2 ==", round(r2, 2))), parse = TRUE,
                 # label = paste0("r2 = ", round(r2, 2), " [log(y) = ", round(aslope,2), "* log(x) " , ifelse(sign(aintercept) >= 0, "+ ", "- "), signif(abs(aintercept),2), "]")),
-            size = 3.5)  +
+            size = textSize * 0.3)  +
   guides(color = F)+
+  theme_classic() + 
+  theme(strip.text.x = element_text(size = textSize), 
+        axis.text=element_text(size=textSize), #change font size of axis text
+        axis.title=element_text(size=textSize), #change font size of axis text
+        legend.text=element_text(size=textSize), #change font size of legend text
+        legend.title=element_text(size=textSize), #change font size of legend title
+        panel.border = element_rect(fill = NA, size = 1),  # Inner panel border
+        strip.background = element_rect(fill = NA, size = 1),
+        strip.text = element_text(face = "bold"),
+        axis.line = element_blank()
+  )+
   scale_y_continuous(trans= "log10") +
   scale_x_continuous(trans= "log10")
 
+folderPlot = paste0("local_plots/", currentSimulation, "height_dbh/")
 saveLastGgPlot(folderPlot, plot_width = 960, ratio = 1.25, scale = 0.8, fileName = paste0("logheight_logdbh3"))
 
 
@@ -1384,7 +1430,7 @@ stat_table$ignore = (stat_table$composition == "sp" & stat_table$species == "het
 # Plot of simulated versus measured tree growth, with R2 and MAPE
 
 # No log scale
-textSize = 2.7
+textSize = 14
 ggplot(subTreePeriodTable_E2, 
        aes(x = WVIcy_mes, y = WVIoy_sim, color = species)) + 
   geom_abline(slope = 1, alpha = 0.25) +
@@ -1410,23 +1456,28 @@ saveLastGgPlot(folderPlot, plot_width = 1280, ratio = 1.1, fileName = paste0("WV
 ggplot(subTreePeriodTable_E2_positive, 
        aes(x = (WVIcy_mes), y = (WVIoy_sim), color = species)) + 
   geom_abline(slope = 1, alpha = 0.1) +
-  # geom_smooth(method = "lm", show.legend = F,
-  #             # fullrange = T, level = 0.01,
-  #             data = subTreePeriodTable_E2_positive[!((subTreePeriodTable_E2_positive$species == "hetre" & subTreePeriodTable_E2_positive$composition == "sp") | (subTreePeriodTable_E2_positive$species == "sapin" & subTreePeriodTable_E2_positive$composition == "ph") ), ]) +
   geom_point() +
   facet_grid(composition ~ site,
              labeller = labeller(site = c("bg" = "Bauges", "vtx" = "Ventoux", "vl" = "Vercors"), 
                                           composition = c("m" = "Mixed stand", "ph" = "Beech stand", "sp" = "Fir stand"))) +
-  # geom_text(data = stat_table[!stat_table$ignore, ],
-  #           aes(x = 10**1.7, y = 1e5 - 1e5 * 0.55 *(species == "sapin") * (composition == "m"), 
-  #           label = paste0("r2 = ", round(r2, 2), ", MAPE = ", round(MAPE, 2))),
-  #           # label = paste0("r2 = ", round(r2_on_log, 2), " [y = ", round(slope_on_log,2), "*x " , ifelse(sign(intercept_on_log) >= 0, "+ ", "- "), signif(abs(intercept_on_log),2), "]")),
-  #           size = textSize, hjust = "left", vjust = "top", show.legend = F) +
-  scale_x_continuous(trans= "log10", limits = c(NA, 1e5), labels = scales::label_number()) +
-  scale_y_continuous(trans= "log10", limits = c(NA, 1e5), labels = scales::label_number())+
-  scale_color_manual(values=c("#d64d4d", "#1b85b8"), labels = c("beech", "fir"), name = "Tree species") +
-  xlab("WVI measured [cm3]")+
-  ylab("WVI simulated [cm3]")
+  scale_x_continuous(breaks = 10**(1:5), labels = c(expression(10^1), expression(10^2), expression(10^3), expression(10^4), expression(10^5)), 
+                     trans= "log10", limits = c(NA, 1e5) ) +
+  scale_y_continuous(breaks = 10**(1:5), labels = c(expression(10^1), expression(10^2), expression(10^3), expression(10^4), expression(10^5)), 
+                     trans= "log10", limits = c(NA, 1e5))+
+  scale_color_manual(values=c("#d64d4d", "#1b85b8"), labels = c("Beech", "Fir"), name = "Species") +
+  xlab( expression(paste("Measured individual WVI (", cm^3%.%year^-1, ")")) ) +
+  ylab( expression(paste("Simulated individual WVI (", cm^3%.%year^-1, ")")) )+
+  theme_classic() + 
+  theme(strip.text = element_text(size = textSize), 
+        axis.text=element_text(size=textSize*0.7), #change font size of axis text
+        axis.title=element_text(size=textSize), #change font size of axis text
+        legend.text=element_text(size=textSize), #change font size of legend text
+        legend.title=element_text(size=textSize), #change font size of legend title
+        panel.border = element_rect(fill = NA, size = 1),  # Inner panel border
+        strip.background = element_rect(fill = NA, size = 1),
+        axis.line = element_blank()
+  )
+  
 
 
 folderPlot = paste0("local_plots/", currentSimulation, "divers/2outlier/")

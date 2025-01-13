@@ -3332,8 +3332,8 @@ saveGgPlot = function(plot = NULL, folderPlot, plot_height = 960, plot_width = N
 }
 
 # plot the last ggplot, see saveGgPlot
-saveLastGgPlot = function(plotfolderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".pdf"){
-  saveGgPlot(plotfolderPlot = plotfolderPlot, plot_height = plot_height, plot_width = plot_width, ratio = ratio, scale = scale, fileName = fileName, fileSuffix = fileSuffix)
+saveLastGgPlot = function(folderPlot, plot_height = 960, plot_width = NULL, ratio = 4/3, scale = 1, fileName = NULL, fileSuffix = ".pdf"){
+  saveGgPlot(folderPlot = folderPlot, plot_height = plot_height, plot_width = plot_width, ratio = ratio, scale = scale, fileName = fileName, fileSuffix = fileSuffix)
 }
 
 
